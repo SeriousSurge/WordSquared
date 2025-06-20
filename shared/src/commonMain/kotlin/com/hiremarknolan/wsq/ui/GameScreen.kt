@@ -2,6 +2,7 @@ package com.hiremarknolan.wsq.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -27,9 +28,14 @@ fun formatTime(elapsedTime: Long): String {
 
 @Composable
 fun GameScreen(platformSettings: PlatformSettings) {
-    // Game state - don't use platformSettings as remember key to prevent recreation on orientation change
-    val gameBoard by remember { 
-        mutableStateOf(WordBoard(platformSettings.createSettings()))
+    // Remember the current difficulty separately from the WordBoard
+    val settings = remember { platformSettings.createSettings() }
+    val initialGridSize = remember { WordBoard.getInitialGridSize(settings) }
+    var currentDifficulty by rememberSaveable { mutableStateOf(Difficulty.fromGridSize(initialGridSize)) }
+    
+    // Game state - recreate WordBoard when difficulty changes to ensure correct difficulty is used
+    val gameBoard by remember(currentDifficulty) { 
+        mutableStateOf(WordBoard(settings, currentDifficulty.gridSize))
     }
 
     // UI state
@@ -53,13 +59,16 @@ fun GameScreen(platformSettings: PlatformSettings) {
     }
 
     // Initialize elapsed time from saved state
-    LaunchedEffect(gameBoard.currentPuzzleDate, gameBoard.difficulty) {
+    LaunchedEffect(gameBoard.currentPuzzleDate, currentDifficulty) {
         if (gameBoard.currentPuzzleDate.isNotEmpty() && !gameBoard.isGameWon) {
             // Add a small delay to ensure state is loaded
             kotlinx.coroutines.delay(100)
             val savedElapsed = gameBoard.getSavedElapsedTime()
             if (savedElapsed > 0) {
                 elapsedTime = savedElapsed
+            } else {
+                // Reset elapsed time when switching to a new difficulty with no saved state
+                elapsedTime = 0L
             }
         }
     }
@@ -75,10 +84,10 @@ fun GameScreen(platformSettings: PlatformSettings) {
     }
     
     // Restore elapsed time when difficulty changes
-    LaunchedEffect(gameBoard.difficulty, gameBoard.isLoading) {
+    LaunchedEffect(currentDifficulty, gameBoard.isLoading) {
         if (!gameBoard.isLoading && gameBoard.currentPuzzleDate.isNotEmpty()) {
             val savedElapsed = gameBoard.getSavedElapsedTime()
-            println("🔄 Difficulty changed to ${gameBoard.difficulty}, restoring elapsed time: ${savedElapsed}s (current: ${elapsedTime}s)")
+            println("🔄 Difficulty changed to ${currentDifficulty}, restoring elapsed time: ${savedElapsed}s (current: ${elapsedTime}s)")
             elapsedTime = savedElapsed
         }
     }
@@ -157,7 +166,8 @@ fun GameScreen(platformSettings: PlatformSettings) {
         if (!gameBoard.isGameWon) {
             gameBoard.saveDailyPuzzleState(elapsedTime)
         }
-        gameBoard.changeDifficulty(difficulty)
+        // Update the remembered difficulty state - this will trigger WordBoard recreation
+        currentDifficulty = difficulty
         // Don't reset elapsed time - it will be restored from saved state for the new difficulty
     }
 
@@ -235,7 +245,8 @@ fun GameScreen(platformSettings: PlatformSettings) {
         VictoryModal(
             gameBoard = gameBoard,
             elapsedTime = elapsedTime,
-            onDismiss = { showVictoryModal = false }
+            onDismiss = { showVictoryModal = false },
+            onDifficultyChange = handleDifficultyChange
         )
     }
 }

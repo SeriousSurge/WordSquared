@@ -215,4 +215,30 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
             println("🔐 Complete state saved for app backgrounding/orientation change")
         }
     }
+
+    companion object {
+        /**
+         * Determines the initial grid size based on saved state
+         * This helps preserve difficulty across app restarts and orientation changes
+         */
+        fun getInitialGridSize(settings: Settings): Int {
+            try {
+                // Create a temporary GameState with default grid size to use GamePersistence
+                val tempGameState = GameState(4)
+                val gamePersistence = GamePersistence(settings, tempGameState, true)
+                
+                val lastUsedDifficulty = gamePersistence.getLastUsedDifficulty()
+                
+                return when (lastUsedDifficulty) {
+                    "easy" -> 4
+                    "medium" -> 5
+                    "hard" -> 6
+                    else -> 4 // default to normal difficulty
+                }
+            } catch (e: Exception) {
+                println("Error determining initial grid size: ${e.message}")
+                return 4 // fallback to default
+            }
+        }
+    }
 }

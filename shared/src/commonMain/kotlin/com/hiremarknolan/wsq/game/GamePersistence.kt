@@ -145,6 +145,51 @@ class GamePersistence(
         }
     }
     
+    /**
+     * Gets the last used difficulty for today's date by checking which difficulty has the most recent saved state
+     */
+    fun getLastUsedDifficulty(): String? {
+        if (!enableStatePersistence) return null
+        
+        try {
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+            val difficulties = listOf("easy", "medium", "hard")
+            
+            // Check each difficulty for saved state today
+            var lastUsedDifficulty: String? = null
+            var mostRecentTime = 0L
+            
+            for (difficulty in difficulties) {
+                val key = "daily_puzzle_${today}_${difficulty}"
+                val json = settings.getString(key, "")
+                
+                if (json.isNotEmpty()) {
+                    try {
+                        val state = Json.decodeFromString<DailyPuzzleState>(json)
+                        // Use elapsed time as a proxy for most recently used
+                        // The difficulty with the highest elapsed time is likely the most recently used
+                        if (state.elapsedTime > mostRecentTime) {
+                            mostRecentTime = state.elapsedTime
+                            lastUsedDifficulty = difficulty
+                        }
+                    } catch (e: Exception) {
+                        // Skip invalid saved states
+                        continue
+                    }
+                }
+            }
+            
+            if (lastUsedDifficulty != null) {
+                println("🎯 Found last used difficulty: $lastUsedDifficulty (elapsed: ${mostRecentTime}s)")
+            }
+            
+            return lastUsedDifficulty
+        } catch (e: Exception) {
+            println("Error getting last used difficulty: ${e.message}")
+            return null
+        }
+    }
+    
     private fun getTodayString(): String {
         return Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
     }

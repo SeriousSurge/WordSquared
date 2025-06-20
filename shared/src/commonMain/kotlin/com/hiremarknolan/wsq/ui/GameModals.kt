@@ -16,12 +16,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hiremarknolan.wsq.game.WordBoard
+import com.hiremarknolan.wsq.models.Difficulty
 
 @Composable
 fun VictoryModal(
     gameBoard: WordBoard,
     elapsedTime: Long,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onDifficultyChange: ((Difficulty) -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
@@ -64,7 +66,11 @@ fun VictoryModal(
                 
                 // Show completion status for daily puzzles
                 if (gameBoard.isDailyPuzzleCompleted()) {
-                    VictoryDailyStatus(gameBoard = gameBoard, onDismiss = onDismiss)
+                    VictoryDailyStatus(
+                        gameBoard = gameBoard, 
+                        onDismiss = onDismiss,
+                        onDifficultyChange = onDifficultyChange
+                    )
                 }
             }
         }
@@ -115,7 +121,8 @@ private fun StatItem(
 @Composable
 private fun VictoryDailyStatus(
     gameBoard: WordBoard,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onDifficultyChange: ((Difficulty) -> Unit)? = null
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -138,7 +145,7 @@ private fun VictoryDailyStatus(
             )
             Button(
                 onClick = { 
-                    gameBoard.startNextDifficulty()
+                    onDifficultyChange?.invoke(nextDifficulty)
                     onDismiss()
                 },
                 colors = ButtonDefaults.buttonColors(
