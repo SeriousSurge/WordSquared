@@ -80,7 +80,7 @@ module.exports = __webpack_require__.p + "8bc1b48ee28fd6b51bb9.wasm";
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 "use strict";
-module.exports = __webpack_require__.p + "8cf4faa1974cc51f7bfd.wasm";
+module.exports = __webpack_require__.p + "31ce9bdb17cf101a1ac0.wasm";
 
 /***/ }),
 
