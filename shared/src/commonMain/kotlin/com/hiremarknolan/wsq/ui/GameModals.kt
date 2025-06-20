@@ -18,6 +18,8 @@ import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Rocket
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -405,42 +407,33 @@ fun TutorialDialog(
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Extension,
-                        contentDescription = "Puzzle",
-                        tint = Color.Black,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .padding(end = 8.dp)
-                    )
                     Text(
                         text = "How to Play WordSquared",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        textAlign = TextAlign.Center
+                        color = Color.Black
                     )
                 }
                 
                 TutorialSection(
                     icon = Icons.Default.GpsFixed,
                     title = "Your Mission",
-                    content = "Fill in the crossword to find the 4 intersecting words that create the crossword."
+                    content = "Uncover four equal-length words hidden around the hollow square—top, right, bottom, and left edges. They only touch at the corner letters."
                 )
                 
                 TutorialSection(
                     icon = Icons.Default.SportsEsports,
-                    title = "How It Works",
-                    content = "• Tap the outer squares to fill them in\n• Type letters to spell out your words\n• All 4 words must be real dictionary words\n• Orange squares show letters you've tried before"
+                    title = "How to Play",
+                    content = "Fill the border with letters and press Enter to submit.\n\nCorrect letters lock in with inverted colors. Orange letters show previous attempts in that cell."
                 )
                 
                 TutorialSection(
                     icon = Icons.Default.EmojiEvents,
-                    title = "Challenge Levels",
-                    content = "• Normal: 4×4 crossword\n• Hard: 5×5 crossword\n• Expert: 6×6 crossword"
+                    title = "Strategy",
+                    content = "Solve with as few submissions as possible. Corner letters give clues for two words at once—use them as anchors!"
                 )
 
                 Button(
