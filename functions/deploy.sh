@@ -40,7 +40,7 @@ gcloud functions deploy get-words \
   --trigger-http \
   --allow-unauthenticated \
   --entry-point getWords \
-  --memory 128MB \
+  --memory 256MB \
   --timeout 60s
 
 cd ..

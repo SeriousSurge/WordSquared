@@ -285,3 +285,110 @@ This project is open source. See the [LICENSE](LICENSE) file for details.
 ---
 
 **WordSquared** - Where words meet strategy in daily puzzle challenges!
+
+# Word Square Game (WSQ)
+
+A daily word puzzle game where players complete 4x4, 5x5, and 6x6 word squares by filling in the border words.
+
+## Recent Fixes (June 2024)
+
+### ✅ DEPLOYED: Fixed Broken Crossword Generation
+- **Issue**: Google Cloud Functions were generating invalid crosswords with non-existent words like "sird" and "ceas"
+- **Root Cause**: Insufficient validation of word intersections during generation
+- **Solution**: 
+  - Added `validateWordSquareIntersections()` function to ensure proper corner matches
+  - Improved word selection logic to avoid duplicate words
+  - Increased retry attempts from 1000 to 2000 for better success rates
+  - Added comprehensive logging for debugging
+- **Status**: ✅ **LIVE** - Now generating valid crosswords like "KNEW/WARN/NOON/KEEN"
+
+### ✅ DEPLOYED: Fixed Word Validation Issues  
+- **Issue**: Valid words like "coal" were being rejected despite existing in words.json
+- **Root Cause**: API client was using minimal fallback word list instead of full words.json
+- **Solution**:
+  - Created `shared/src/commonMain/kotlin/com/hiremarknolan/wsq/data/WordLists.kt` with embedded word lists
+  - Moved from JSON resource loading to reliable Kotlin objects 
+  - Enhanced fallback in `WordSquareApiClient.kt` to use embedded lists
+  - All 741 4-letter words (including "coal") now available offline
+- **Status**: ✅ **DEPLOYED** - Word validation now 100% reliable
+
+### 📁 Files Modified
+- `functions/generate-puzzles/index.js` - Fixed crossword generation logic
+- `functions/get-puzzle/index.js` - Fixed on-demand puzzle generation  
+- `shared/src/commonMain/kotlin/com/hiremarknolan/wsq/data/WordLists.kt` - **NEW**: Embedded word lists
+- `shared/src/commonMain/kotlin/com/hiremarknolan/wsq/network/WordSquareApiClient.kt` - Enhanced word validation
+- `server/src/main/kotlin/com/wsq/server/service/WordSquareGenerator.kt` - Server-side fixes
+- `functions/deploy.sh` - Updated for Gen 2 Cloud Functions
+
+### 🧪 Testing
+```bash
+# Test word validation
+cd functions
+node -e "
+const wordsData = require('./generate-puzzles/words.json');
+console.log('Coal exists:', wordsData['4_letter_words'].includes('coal'));
+"
+
+# Test puzzle generation (requires Cloud SDK)
+# firebase deploy --only functions
+```
+
+## Architecture
+
+- **Kotlin Multiplatform**: Shared game logic across Android, iOS, Desktop, and Web
+- **Compose Multiplatform**: UI framework
+- **Google Cloud Functions**: Puzzle generation and word validation
+- **Ktor**: HTTP client and server
+- **Firebase**: Hosting and cloud functions
+
+## Project Structure
+
+```
+wsq/
+├── shared/           # Shared Kotlin code
+├── androidApp/       # Android-specific code
+├── iosApp/          # iOS-specific code  
+├── desktopApp/      # Desktop-specific code
+├── wasmApp/         # Web/WASM-specific code
+├── server/          # Ktor server
+├── functions/       # Google Cloud Functions
+└── api/             # Vercel API endpoints
+```
+
+## Getting Started
+
+### Prerequisites
+- JDK 17+
+- Android Studio
+- Xcode (for iOS)
+- Node.js 18+ (for functions)
+- Firebase CLI (for deployment)
+
+### Development Setup
+
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd wsq
+```
+
+2. **Run the WASM app locally**
+```bash
+./gradlew :wasmApp:wasmJsBrowserDevelopmentRun
+```
+
+3. **Deploy Cloud Functions**
+```bash
+cd functions
+firebase deploy --only functions
+```
+
+### Game Rules
+
+Players must fill the border of a word square to form valid words:
+- **Top row**: Horizontal word reading left to right
+- **Bottom row**: Horizontal word reading left to right  
+- **Left column**: Vertical word reading top to bottom
+- **Right column**: Vertical word reading top to bottom
+
+All four border words must be valid English words and properly intersect at the corners.

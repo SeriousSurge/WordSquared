@@ -1,5 +1,6 @@
 package com.hiremarknolan.wsq.network
 
+import com.hiremarknolan.wsq.data.WordLists
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -293,14 +294,14 @@ class WordSquareApiClient(private val settings: Settings) {
                     }
                 }
 
-                // 3. Fallback to a minimal hardcoded set
+                // 3. Use embedded Kotlin word lists as reliable fallback
                 if (wordsData == null) {
                     wordsData = WordsData(
-                        `4_letter_words` = listOf("able", "back", "call", "came", "care", "case", "city", "come", "cool", "data", "date", "days", "deal", "deep", "door", "each", "east", "easy", "even", "ever", "face", "fact", "fair", "fall", "fast", "feel", "file", "find", "fire", "five", "form", "four", "free", "from", "full", "game", "give", "good", "hand", "have", "head", "help", "here", "high", "home", "hour", "idea", "into", "just", "keep", "kind", "know", "land", "last", "late", "left", "life", "like", "line", "live", "long", "look", "love", "made", "make", "many", "more", "most", "move", "much", "name", "need", "next", "only", "open", "over", "pain", "part", "pest", "play", "read", "real", "said", "same", "show", "side", "some", "take", "tell", "than", "that", "them", "they", "this", "time", "very", "want", "ways", "well", "were", "what", "when", "will", "with", "word", "work", "year", "your"),
-                        `5_letter_words` = listOf("about", "after", "again", "begin", "being", "black", "bring", "build", "could", "every", "first", "found", "given", "great", "group", "hands", "house", "large", "light", "might", "money", "never", "night", "order", "other", "place", "point", "right", "shall", "small", "sound", "start", "state", "still", "their", "there", "these", "thing", "think", "three", "today", "under", "water", "where", "which", "while", "white", "whole", "world", "would", "write", "young"),
-                        `6_letter_words` = listOf("action", "always", "appear", "around", "become", "before", "better", "change", "during", "enough", "father", "follow", "friend", "mother", "number", "office", "people", "person", "public", "really", "result", "school", "second", "should", "simple", "social", "system", "though", "united", "wanted", "within")
+                        `4_letter_words` = WordLists.fourLetterWords,
+                        `5_letter_words` = WordLists.fiveLetterWords,
+                        `6_letter_words` = WordLists.sixLetterWords
                     )
-                    println("⚠️  Using fallback basic word list")
+                    println("📚 Using embedded Kotlin word lists with ${wordsData!!.`4_letter_words`.size} 4-letter, ${wordsData!!.`5_letter_words`.size} 5-letter, ${wordsData!!.`6_letter_words`.size} 6-letter words (including 'coal')")
                 }
             } catch (e: Exception) {
                 println("Failed to load words.json: ${e.message}")

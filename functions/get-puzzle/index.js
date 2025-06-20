@@ -4,6 +4,26 @@ const wordsData = require('./words.json');
 const storage = new Storage();
 const BUCKET_NAME = 'word-square-puzzles';
 
+/**
+ * Validates that a word square has proper intersections
+ */
+function validateWordSquareIntersections(topWord, leftWord, rightWord, bottomWord, size) {
+  // Check corner intersections
+  if (!topWord || !leftWord || !rightWord || !bottomWord) return false;
+  
+  // All words must be exactly the right size
+  if (topWord.length !== size || leftWord.length !== size || 
+      rightWord.length !== size || bottomWord.length !== size) return false;
+  
+  // Corner intersections must match exactly
+  const topLeft = topWord[0] === leftWord[0];
+  const topRight = topWord[size - 1] === rightWord[0];
+  const bottomLeft = leftWord[size - 1] === bottomWord[0];
+  const bottomRight = rightWord[size - 1] === bottomWord[size - 1];
+  
+  return topLeft && topRight && bottomLeft && bottomRight;
+}
+
 exports.getPuzzle = async (req, res) => {
   // Set CORS headers for all responses
   res.set('Access-Control-Allow-Origin', '*');
@@ -66,17 +86,21 @@ exports.getPuzzle = async (req, res) => {
         
         function generateSeededWordSquare(size, dateSeed) {
           const wordList = WORD_LISTS[size === 4 ? 'easy' : size === 5 ? 'medium' : 'hard'];
-          const maxAttempts = 1000;
+          const maxAttempts = 2000; // Increased for better success rate
+          
+          console.log(`Generating seeded ${size}x${size} word square from ${wordList.length} words...`);
           
           for (let attempt = 0; attempt < maxAttempts; attempt++) {
             try {
-              // Find a valid set of 4 words that can form proper intersections
+              // Step 1: Pick a seeded starting word for the top
               const topIndex = Math.floor(seededRandom(dateSeed + attempt) * wordList.length);
               const topWord = wordList[topIndex].toUpperCase();
               
-              // Find words that can intersect with the top word
+              // Step 2: Find words that can intersect with the top word at position 0
               const possibleLeftWords = wordList.filter(word => 
-                word.toUpperCase()[0] === topWord[0] && word.toUpperCase().length === size
+                word.toUpperCase()[0] === topWord[0] && 
+                word.toUpperCase().length === size &&
+                word.toUpperCase() !== topWord
               );
               
               if (possibleLeftWords.length === 0) continue;
@@ -84,9 +108,12 @@ exports.getPuzzle = async (req, res) => {
               const leftIndex = Math.floor(seededRandom(dateSeed + attempt + 1000) * possibleLeftWords.length);
               const leftWord = possibleLeftWords[leftIndex].toUpperCase();
               
-              // Find right word that starts with last letter of top word
+              // Step 3: Find words that can intersect with the top word at the last position
               const possibleRightWords = wordList.filter(word => 
-                word.toUpperCase()[0] === topWord[size - 1] && word.toUpperCase().length === size
+                word.toUpperCase()[0] === topWord[size - 1] && 
+                word.toUpperCase().length === size &&
+                word.toUpperCase() !== topWord &&
+                word.toUpperCase() !== leftWord
               );
               
               if (possibleRightWords.length === 0) continue;
@@ -94,12 +121,15 @@ exports.getPuzzle = async (req, res) => {
               const rightIndex = Math.floor(seededRandom(dateSeed + attempt + 2000) * possibleRightWords.length);
               const rightWord = possibleRightWords[rightIndex].toUpperCase();
               
-              // Find bottom word that starts with last letter of left word and ends with last letter of right word
+              // Step 4: Find words that connect the bottom of left word to bottom of right word
               const possibleBottomWords = wordList.filter(word => {
                 const upperWord = word.toUpperCase();
                 return upperWord[0] === leftWord[size - 1] && 
                        upperWord[size - 1] === rightWord[size - 1] && 
-                       upperWord.length === size;
+                       upperWord.length === size &&
+                       upperWord !== topWord &&
+                       upperWord !== leftWord &&
+                       upperWord !== rightWord;
               });
               
               if (possibleBottomWords.length === 0) continue;
@@ -107,15 +137,12 @@ exports.getPuzzle = async (req, res) => {
               const bottomIndex = Math.floor(seededRandom(dateSeed + attempt + 3000) * possibleBottomWords.length);
               const bottomWord = possibleBottomWords[bottomIndex].toUpperCase();
               
-              // Verify all corner constraints
-              if (topWord[0] !== leftWord[0] ||          // Top-left corner
-                  topWord[size-1] !== rightWord[0] ||    // Top-right corner
-                  leftWord[size-1] !== bottomWord[0] ||  // Bottom-left corner
-                  rightWord[size-1] !== bottomWord[size-1]) { // Bottom-right corner
+              // Step 5: Validate the complete word square
+              if (!validateWordSquareIntersections(topWord, leftWord, rightWord, bottomWord, size)) {
                 continue;
               }
               
-              // Create grid with proper intersections
+              // Step 6: Create the validated grid
               const grid = Array(size).fill().map(() => Array(size).fill(''));
               
               // Place the border words
@@ -134,7 +161,7 @@ exports.getPuzzle = async (req, res) => {
                 }
               }
               
-              console.log(`Generated seeded word square for ${targetDate}:
+              console.log(`✅ Generated seeded ${size}x${size} word square for ${targetDate} (attempt ${attempt + 1}):
                 Top: ${topWord} (${topWord[0]}...${topWord[size-1]})
                 Left: ${leftWord} (${leftWord[0]}...${leftWord[size-1]})
                 Right: ${rightWord} (${rightWord[0]}...${rightWord[size-1]})
@@ -153,7 +180,7 @@ exports.getPuzzle = async (req, res) => {
             }
           }
           
-          throw new Error(`Failed to generate seeded ${size}x${size} word square after ${maxAttempts} attempts`);
+          throw new Error(`❌ Failed to generate seeded ${size}x${size} word square after ${maxAttempts} attempts`);
         }
         
         // Generate and return the puzzle

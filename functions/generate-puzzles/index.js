@@ -11,74 +11,128 @@ const WORD_LISTS = {
   hard: wordsData['6_letter_words']
 };
 
+/**
+ * Validates that a word square has proper intersections
+ */
+function validateWordSquareIntersections(topWord, leftWord, rightWord, bottomWord, size) {
+  // Check corner intersections
+  if (!topWord || !leftWord || !rightWord || !bottomWord) return false;
+  
+  // All words must be exactly the right size
+  if (topWord.length !== size || leftWord.length !== size || 
+      rightWord.length !== size || bottomWord.length !== size) return false;
+  
+  // Corner intersections must match exactly
+  const topLeft = topWord[0] === leftWord[0];
+  const topRight = topWord[size - 1] === rightWord[0];
+  const bottomLeft = leftWord[size - 1] === bottomWord[0];
+  const bottomRight = rightWord[size - 1] === bottomWord[size - 1];
+  
+  if (!topLeft || !topRight || !bottomLeft || !bottomRight) {
+    console.log(`Corner validation failed:
+      TopLeft: ${topWord[0]} === ${leftWord[0]} : ${topLeft}
+      TopRight: ${topWord[size - 1]} === ${rightWord[0]} : ${topRight}
+      BottomLeft: ${leftWord[size - 1]} === ${bottomWord[0]} : ${bottomLeft}
+      BottomRight: ${rightWord[size - 1]} === ${bottomWord[size - 1]} : ${bottomRight}`);
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Creates a proper word square with validated intersections
+ */
+function createValidatedWordSquareGrid(topWord, leftWord, rightWord, bottomWord, size) {
+  const grid = Array(size).fill().map(() => Array(size).fill(''));
+  
+  // Place the border words
+  for (let i = 0; i < size; i++) {
+    grid[0][i] = topWord[i];        // Top edge
+    grid[size-1][i] = bottomWord[i]; // Bottom edge
+    grid[i][0] = leftWord[i];       // Left edge
+    grid[i][size-1] = rightWord[i]; // Right edge
+  }
+  
+  // Fill interior with random letters (these don't matter for the game)
+  for (let i = 1; i < size-1; i++) {
+    for (let j = 1; j < size-1; j++) {
+      grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    }
+  }
+  
+  return grid;
+}
 
 async function generateWordSquare(size) {
   const wordList = WORD_LISTS[size === 4 ? 'easy' : size === 5 ? 'medium' : 'hard'];
-  const maxAttempts = 1000;
+  const maxAttempts = 2000; // Increased attempts for better success rate
+  
+  console.log(`Generating ${size}x${size} word square from ${wordList.length} words...`);
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      // Find a valid set of 4 words that can form proper intersections
+      // Step 1: Pick a random starting word for the top
       const topWord = wordList[Math.floor(Math.random() * wordList.length)].toUpperCase();
       
-      // Find words that can intersect with the top word
+      // Step 2: Find words that can intersect with the top word at position 0
       const possibleLeftWords = wordList.filter(word => 
-        word.toUpperCase()[0] === topWord[0] && word.toUpperCase().length === size
+        word.toUpperCase()[0] === topWord[0] && 
+        word.toUpperCase().length === size &&
+        word.toUpperCase() !== topWord // Avoid duplicates
       );
       
-      if (possibleLeftWords.length === 0) continue;
+      if (possibleLeftWords.length === 0) {
+        if (attempt % 100 === 0) console.log(`Attempt ${attempt}: No left words for top word "${topWord}"`);
+        continue;
+      }
       
       const leftWord = possibleLeftWords[Math.floor(Math.random() * possibleLeftWords.length)].toUpperCase();
       
-      // Find right word that starts with last letter of top word
+      // Step 3: Find words that can intersect with the top word at the last position
       const possibleRightWords = wordList.filter(word => 
-        word.toUpperCase()[0] === topWord[size - 1] && word.toUpperCase().length === size
+        word.toUpperCase()[0] === topWord[size - 1] && 
+        word.toUpperCase().length === size &&
+        word.toUpperCase() !== topWord && // Avoid duplicates
+        word.toUpperCase() !== leftWord
       );
       
-      if (possibleRightWords.length === 0) continue;
+      if (possibleRightWords.length === 0) {
+        if (attempt % 100 === 0) console.log(`Attempt ${attempt}: No right words for top word "${topWord}"`);
+        continue;
+      }
       
       const rightWord = possibleRightWords[Math.floor(Math.random() * possibleRightWords.length)].toUpperCase();
       
-      // Find bottom word that starts with last letter of left word and ends with last letter of right word
+      // Step 4: Find words that connect the bottom of left word to bottom of right word
       const possibleBottomWords = wordList.filter(word => {
         const upperWord = word.toUpperCase();
         return upperWord[0] === leftWord[size - 1] && 
                upperWord[size - 1] === rightWord[size - 1] && 
-               upperWord.length === size;
+               upperWord.length === size &&
+               upperWord !== topWord && // Avoid duplicates
+               upperWord !== leftWord &&
+               upperWord !== rightWord;
       });
       
-      if (possibleBottomWords.length === 0) continue;
-      
-      const bottomWord = possibleBottomWords[Math.floor(Math.random() * possibleBottomWords.length)].toUpperCase();
-      
-      // Verify all corner constraints
-      if (topWord[0] !== leftWord[0] ||          // Top-left corner
-          topWord[size-1] !== rightWord[0] ||    // Top-right corner
-          leftWord[size-1] !== bottomWord[0] ||  // Bottom-left corner
-          rightWord[size-1] !== bottomWord[size-1]) { // Bottom-right corner
+      if (possibleBottomWords.length === 0) {
+        if (attempt % 100 === 0) console.log(`Attempt ${attempt}: No bottom words connecting "${leftWord[size-1]}" to "${rightWord[size-1]}"`);
         continue;
       }
       
-      // Create grid with proper intersections
-      const grid = Array(size).fill().map(() => Array(size).fill(''));
+      const bottomWord = possibleBottomWords[Math.floor(Math.random() * possibleBottomWords.length)].toUpperCase();
       
-      // Place the border words
-      for (let i = 0; i < size; i++) {
-        grid[0][i] = topWord[i];        // Top edge
-        grid[size-1][i] = bottomWord[i]; // Bottom edge
-        grid[i][0] = leftWord[i];       // Left edge
-        grid[i][size-1] = rightWord[i]; // Right edge
+      // Step 5: Validate the complete word square
+      if (!validateWordSquareIntersections(topWord, leftWord, rightWord, bottomWord, size)) {
+        console.log(`Attempt ${attempt}: Validation failed for words: ${topWord}, ${leftWord}, ${rightWord}, ${bottomWord}`);
+        continue;
       }
       
-      // Fill interior with random letters (these don't matter for the game)
-      for (let i = 1; i < size-1; i++) {
-        for (let j = 1; j < size-1; j++) {
-          grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-        }
-      }
+      // Step 6: Create the validated grid
+      const grid = createValidatedWordSquareGrid(topWord, leftWord, rightWord, bottomWord, size);
       
-      // Validate that we have a proper word square
-      console.log(`Generated valid word square:
+      // Final validation log
+      console.log(`✅ Generated valid ${size}x${size} word square (attempt ${attempt + 1}):
         Top: ${topWord} (${topWord[0]}...${topWord[size-1]})
         Left: ${leftWord} (${leftWord[0]}...${leftWord[size-1]})
         Right: ${rightWord} (${rightWord[0]}...${rightWord[size-1]})
@@ -97,12 +151,12 @@ async function generateWordSquare(size) {
       };
       
     } catch (error) {
-      console.error('Attempt failed:', error);
+      console.error(`Attempt ${attempt} failed:`, error);
       continue;
     }
   }
   
-  throw new Error(`Failed to generate ${size}x${size} word square after ${maxAttempts} attempts`);
+  throw new Error(`❌ Failed to generate valid ${size}x${size} word square after ${maxAttempts} attempts`);
 }
 
 exports.generatePuzzles = async (req, res) => {
