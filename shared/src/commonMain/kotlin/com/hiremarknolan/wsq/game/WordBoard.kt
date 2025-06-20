@@ -50,6 +50,11 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
     init {
         println("🎯🎯🎯 WORDBOARD INIT STARTED 🎯🎯🎯")
         println("🎯 gridSize=$gridSize")
+        
+        // Mark this difficulty as the last used one
+        val difficultyKey = GameConfiguration.getDifficultyApiKey(gridSize)
+        gamePersistence.setLastUsedDifficulty(difficultyKey)
+        
         scope.launch {
             apiClient.cleanupOldPuzzles()
             gamePersistence.cleanupOldDailyStates()
@@ -180,6 +185,10 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
     fun changeDifficulty(newDifficulty: Difficulty) {
         // Update difficulty - this will be used by persistence to load the right saved state
         gameState.updateDifficulty(newDifficulty)
+        
+        // Save the new difficulty as the last used one
+        val difficultyKey = GameConfiguration.getDifficultyApiKey(newDifficulty.gridSize)
+        gamePersistence.setLastUsedDifficulty(difficultyKey)
         
         scope.launch {
             // Load the puzzle (and restore state) for the new difficulty

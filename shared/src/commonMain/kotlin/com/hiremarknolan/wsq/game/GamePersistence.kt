@@ -167,17 +167,94 @@ class GamePersistence(
     }
     
     /**
-     * Gets the last used difficulty for today's date by checking which difficulty has the most recent saved state
+     * Sets the last used difficulty preference
+     */
+    fun setLastUsedDifficulty(difficulty: String) {
+        if (!enableStatePersistence) return
+        
+        try {
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+            val timestamp = Clock.System.now().toEpochMilliseconds()
+            val key = "last_used_difficulty_${today}"
+            
+            // Store both the difficulty and timestamp
+            val data = "${difficulty}:${timestamp}"
+            settings.putString(key, data)
+            
+            println("💾 Set last used difficulty: $difficulty at timestamp $timestamp")
+        } catch (e: Exception) {
+            println("Error setting last used difficulty: ${e.message}")
+        }
+    }
+
+    /**
+     * Gets the last used difficulty for today's date by checking the dedicated preference
+     * Falls back to checking saved states if no preference is found
+     * Returns null for new days (no saved states) to default to easy difficulty
      */
     fun getLastUsedDifficulty(): String? {
         if (!enableStatePersistence) return null
         
         try {
             val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+            
+            // Check if we have ANY saved states for today - if not, it's a new day
+            val hasAnyStateForToday = hasAnyDailyStateForDate(today)
+            if (!hasAnyStateForToday) {
+                println("🌅 New day detected - no saved states for $today, defaulting to easy difficulty")
+                return null // This will cause the app to default to easy difficulty
+            }
+            
+            val key = "last_used_difficulty_${today}"
+            val data = settings.getString(key, "")
+            
+            // First try to get from the dedicated preference
+            if (data.isNotEmpty()) {
+                val parts = data.split(":")
+                if (parts.size >= 2) {
+                    val difficulty = parts[0]
+                    val timestamp = parts.getOrNull(1)?.toLongOrNull()
+                    println("🎯 Found last used difficulty from preference: $difficulty (timestamp: $timestamp)")
+                    return difficulty
+                }
+            }
+            
+            // Fallback to the old method - check saved states
+            return getLastUsedDifficultyFromStates()
+        } catch (e: Exception) {
+            println("Error getting last used difficulty: ${e.message}")
+            return null
+        }
+    }
+    
+    /**
+     * Checks if there are any saved daily states for a given date
+     */
+    private fun hasAnyDailyStateForDate(date: String): Boolean {
+        val difficulties = listOf("easy", "medium", "hard")
+        
+        for (difficulty in difficulties) {
+            val key = "daily_puzzle_${date}_${difficulty}"
+            val json = settings.getString(key, "")
+            if (json.isNotEmpty()) {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    /**
+     * Fallback method to determine last used difficulty from saved states
+     * Uses a combination of factors: has active state > most recent save time > highest elapsed time
+     */
+    private fun getLastUsedDifficultyFromStates(): String? {
+        try {
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
             val difficulties = listOf("easy", "medium", "hard")
             
-            // Check each difficulty for saved state today
-            var lastUsedDifficulty: String? = null
+            var bestDifficulty: String? = null
+            var bestScore = 0
             var mostRecentTime = 0L
             
             for (difficulty in difficulties) {
@@ -187,12 +264,28 @@ class GamePersistence(
                 if (json.isNotEmpty()) {
                     try {
                         val state = Json.decodeFromString<DailyPuzzleState>(json)
-                        // Use elapsed time as a proxy for most recently used
-                        // The difficulty with the highest elapsed time is likely the most recently used
+                        
+                        // Calculate a score for determining "most recent"
+                        var score = 0
+                        
+                        // Prefer incomplete games (user is actively playing)
+                        if (!state.isCompleted) {
+                            score += 1000
+                        }
+                        
+                        // Prefer games with progress (more guesses made)
+                        score += state.previousGuesses.size * 100
+                        
+                        // Use elapsed time as tiebreaker
                         if (state.elapsedTime > mostRecentTime) {
                             mostRecentTime = state.elapsedTime
-                            lastUsedDifficulty = difficulty
                         }
+                        
+                        if (score > bestScore || (score == bestScore && state.elapsedTime == mostRecentTime)) {
+                            bestScore = score
+                            bestDifficulty = difficulty
+                        }
+                        
                     } catch (e: Exception) {
                         // Skip invalid saved states
                         continue
@@ -200,13 +293,13 @@ class GamePersistence(
                 }
             }
             
-            if (lastUsedDifficulty != null) {
-                println("🎯 Found last used difficulty: $lastUsedDifficulty (elapsed: ${mostRecentTime}s)")
+            if (bestDifficulty != null) {
+                println("🎯 Found last used difficulty from states: $bestDifficulty (score: $bestScore)")
             }
             
-            return lastUsedDifficulty
+            return bestDifficulty
         } catch (e: Exception) {
-            println("Error getting last used difficulty: ${e.message}")
+            println("Error getting last used difficulty from states: ${e.message}")
             return null
         }
     }
