@@ -219,13 +219,16 @@ private fun RightSidePanel(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .padding(16.dp),
+            .padding(horizontal = 8.dp, vertical = 16.dp), // Reduced horizontal padding to give more space
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Previous guesses (compact) - at the top
+        // Previous guesses (compact) - at the top with flexible space
         CompactGuessesDisplay(
-            gameBoard = gameBoard
+            gameBoard = gameBoard,
+            modifier = Modifier
+                .weight(1f, fill = false) // Allow it to take available space but don't force it to fill
+                .widthIn(min = 120.dp, max = 200.dp) // Set reasonable width constraints
         )
         
         // Right side of split keyboard - aligned to bottom
@@ -237,14 +240,16 @@ private fun RightSidePanel(
                         gameBoard.submitWord()
                     }
                 },
-                modifier = Modifier
+                modifier = Modifier.padding(top = 8.dp)
             )
         } else {
             Button(
                 onClick = {
                     coroutineScope.launch { gameBoard.submitWord() }
                 },
-                modifier = Modifier.width(80.dp)
+                modifier = Modifier
+                    .width(80.dp)
+                    .padding(top = 8.dp)
             ) {
                 Text("Submit", fontSize = 12.sp)
             }

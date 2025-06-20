@@ -12,6 +12,11 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -101,20 +106,11 @@ fun PreviousGuessesPanel(gameBoard: WordBoard) {
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                gameBoard.previousGuesses.asReversed().take(3).forEachIndexed { index, guess ->
+                // Show ALL guesses, not just 3
+                gameBoard.previousGuesses.asReversed().forEachIndexed { index, guess ->
                     GuessItem(
                         guess = guess,
                         guessNumber = gameBoard.previousGuesses.size - index
-                    )
-                }
-                
-                if (gameBoard.previousGuesses.size > 3) {
-                    Text(
-                        text = "... and ${gameBoard.previousGuesses.size - 3} more",
-                        fontSize = 10.sp,
-                        color = Color.Gray,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -166,40 +162,86 @@ fun CompactGuessesDisplay(
     gameBoard: WordBoard,
     modifier: Modifier = Modifier
 ) {
+    // Debug: Log what the UI component is receiving
+    println("📺📺📺 COMPACT GUESSES DISPLAY 📺📺📺")
+    println("📺 gameBoard.previousGuesses.size = ${gameBoard.previousGuesses.size}")
+    println("📺 gameBoard.previousGuesses = ${gameBoard.previousGuesses}")
+    println("📺 gameBoard.guessCount = ${gameBoard.guessCount}")
+    println("📺 gameBoard.isLoading = ${gameBoard.isLoading}")
+    
+    // Use state that gets updated when gameBoard state changes
+    var guesses by remember { mutableStateOf(gameBoard.previousGuesses) }
+    var isLoading by remember { mutableStateOf(gameBoard.isLoading) }
+    
+    // Update local state whenever gameBoard state changes
+    LaunchedEffect(gameBoard.previousGuesses, gameBoard.isLoading) {
+        println("📺 LaunchedEffect triggered: updating local state")
+        println("📺 New guesses: ${gameBoard.previousGuesses.size}")
+        guesses = gameBoard.previousGuesses
+        isLoading = gameBoard.isLoading
+    }
+    
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .padding(8.dp), // Add padding around the entire component
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = "Recent Guesses",
+            text = "Recent Guesses (${guesses.size})",
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black
         )
         
-        Column(
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            if (gameBoard.previousGuesses.isEmpty()) {
-                Text(
-                    text = "None yet",
-                    fontSize = 10.sp,
-                    color = Color.Gray.copy(alpha = 0.7f)
-                )
-            } else {
-                gameBoard.previousGuesses.takeLast(4).forEach { guess ->
+        if (guesses.isEmpty()) {
+            Text(
+                text = if (isLoading) "Loading..." else "None yet",
+                fontSize = 10.sp,
+                color = Color.Gray.copy(alpha = 0.7f),
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        } else {
+            // Make the guesses scrollable with proper spacing
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 200.dp) // Limit height to make it scrollable
+                    .verticalScroll(rememberScrollState())
+                    .padding(4.dp), // Inner padding for scroll content
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Show more guesses in landscape (up to 8) and make them scrollable
+                guesses.takeLast(8).forEach { guess ->
                     Text(
                         text = guess,
                         fontSize = 10.sp,
                         color = Color.Gray,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier
+                            .fillMaxWidth(0.9f) // Use most of the width but leave some margin
                             .background(
                                 Color.White,
-                                RoundedCornerShape(4.dp)
+                                RoundedCornerShape(6.dp)
                             )
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                            .border(
+                                0.5.dp,
+                                Color(0xFFE0E0E0),
+                                RoundedCornerShape(6.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+                
+                // Add some bottom padding for better scrolling experience
+                if (guesses.size > 8) {
+                    Text(
+                        text = "... ${guesses.size - 8} more above",
+                        fontSize = 8.sp,
+                        color = Color.Gray.copy(alpha = 0.6f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }

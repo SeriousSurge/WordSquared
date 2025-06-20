@@ -48,11 +48,14 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
     val completionTime: Long get() = gameState.completionTime
 
     init {
+        println("🎯🎯🎯 WORDBOARD INIT STARTED 🎯🎯🎯")
+        println("🎯 gridSize=$gridSize")
         scope.launch {
             apiClient.cleanupOldPuzzles()
             gamePersistence.cleanupOldDailyStates()
             println(apiClient.getCacheStats())
             loadTodaysPuzzleWithStateCheck()
+            println("🎯 WORDBOARD INIT COMPLETED")
         }
     }
 
@@ -104,7 +107,7 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
     }
     
     private fun loadPuzzleFromSavedState(savedState: DailyPuzzleState) {
-        // Reset game state first, before any setup
+        // Reset game state first, but we'll restore the previous guesses afterwards
         gameState.resetForNewGame()
         
         // Ensure grid size matches the saved state
@@ -242,6 +245,18 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
         if (gameState.currentPuzzleDate.isNotEmpty()) {
             gamePersistence.saveDailyPuzzleState(gameGrid.tiles, currentElapsedTime, gameGrid.solution)
             println("🔐 Complete state saved for app backgrounding/orientation change")
+        }
+    }
+    
+    fun loadDailyPuzzleState() {
+        // Public method to explicitly load the daily puzzle state
+        // Useful for forcing state restoration after orientation changes
+        scope.launch {
+            val savedState = gamePersistence.loadDailyPuzzleState()
+            if (savedState != null) {
+                gameLogic.restoreGameState(savedState)
+                println("🔄 Manually restored state: ${savedState.previousGuesses.size} guesses")
+            }
         }
     }
 

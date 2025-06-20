@@ -162,7 +162,11 @@ class GameLogic(
     
     fun restoreGameState(state: DailyPuzzleState) {
         try {
-            println("🔄 Restoring game state: completed=${state.isCompleted}, tiles=${state.tiles.size}x${state.tiles.firstOrNull()?.size}")
+            println("🔄🔄🔄 RESTORING GAME STATE 🔄🔄🔄")
+            println("🔄 completed=${state.isCompleted}")
+            println("🔄 tiles=${state.tiles.size}x${state.tiles.firstOrNull()?.size}")
+            println("🔄 previousGuesses=${state.previousGuesses.size}: ${state.previousGuesses}")
+            println("🔄 guessCount=${state.completionGuesses}")
             
             // Validate the saved state
             if (state.tiles.isEmpty()) {
@@ -221,6 +225,8 @@ class GameLogic(
         gameState.selectedPosition = validPosition
         gameState.previousGuesses = state.previousGuesses
         gameState.guessCount = state.completionGuesses
+        
+        println("✅ Restored in-progress state: ${state.previousGuesses.size} guesses, count=${state.completionGuesses}")
         
         // Don't adjust start time - let the UI handle elapsed time restoration
         // The GameScreen will restore the elapsed time from the saved state

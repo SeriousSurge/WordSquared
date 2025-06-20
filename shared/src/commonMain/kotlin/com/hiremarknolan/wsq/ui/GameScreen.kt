@@ -28,8 +28,12 @@ fun GameScreen(platformSettings: PlatformSettings) {
     val initialGridSize = remember { WordBoard.getInitialGridSize(settings) }
     var currentDifficulty by rememberSaveable { mutableStateOf(Difficulty.fromGridSize(initialGridSize)) }
     
-    // Game state - recreate WordBoard when difficulty changes to ensure correct difficulty is used
-    val gameBoard by remember(currentDifficulty) { 
+    // Calculate landscape mode first
+    val isLandscape = platformSettings.screenWidth > platformSettings.screenHeight
+    
+    // Game state - recreate WordBoard when difficulty changes OR orientation changes
+    val gameBoard by remember(currentDifficulty, isLandscape) {
+        println("🔄 Creating new WordBoard: difficulty=${currentDifficulty}, landscape=${isLandscape}")
         mutableStateOf(WordBoard(settings, currentDifficulty.gridSize))
     }
 
@@ -44,8 +48,6 @@ fun GameScreen(platformSettings: PlatformSettings) {
     
     val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
-    val isLandscape = platformSettings.screenWidth > platformSettings.screenHeight
-    
     // Helper function to determine if virtual keyboard should be shown
     val shouldShowVirtualKeyboard = platformSettings.shouldShowVirtualKeyboard || forceShowKeyboard
 
@@ -95,11 +97,30 @@ fun GameScreen(platformSettings: PlatformSettings) {
         }
     }
     
-    // Save state on orientation change (isLandscape changes)
+    // Debug and handle orientation changes
     LaunchedEffect(isLandscape) {
+        println("🔄🔄🔄 ORIENTATION CHANGED 🔄🔄🔄")
+        println("🔄 landscape=$isLandscape")
+        println("🔄 screenWidth=${platformSettings.screenWidth}")
+        println("🔄 screenHeight=${platformSettings.screenHeight}")
+        println("🔄 Current guesses: ${gameBoard.previousGuesses.size}")
+        println("🔄 Current guessCount: ${gameBoard.guessCount}")
+        println("🔄 currentPuzzleDate: ${gameBoard.currentPuzzleDate}")
+        println("🔄 isGameWon: ${gameBoard.isGameWon}")
+        
         if (gameBoard.currentPuzzleDate.isNotEmpty() && !gameBoard.isGameWon) {
             kotlinx.coroutines.delay(100) // Small delay to ensure state is stable
             gameBoard.saveCompleteState(elapsedTime)
+            println("🔄 State saved after orientation change")
+            
+            // On Android, try to force state restoration after orientation change
+            kotlinx.coroutines.delay(300)
+            println("🔄 Attempting to force state restoration...")
+            // Instead of recreation, try to manually restore state
+            if (gameBoard.previousGuesses.isEmpty() && gameBoard.guessCount > 0) {
+                println("🔄 Detected missing guesses after rotation, attempting manual restore...")
+                gameBoard.changeDifficulty(gameBoard.difficulty) // This forces proper state loading
+            }
         }
     }
 
