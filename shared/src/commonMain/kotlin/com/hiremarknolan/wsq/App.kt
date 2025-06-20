@@ -53,7 +53,10 @@ fun App(platformSettings: PlatformSettings) {
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color(0xFFFDF6E3)) // App background color
-                        .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout))
+                        .windowInsetsPadding(
+                            WindowInsets.systemBars.only(WindowInsetsSides.Vertical)
+                                .union(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal))
+                        )
                 ) {
                     GameScreen(platformSettings)
                 }
