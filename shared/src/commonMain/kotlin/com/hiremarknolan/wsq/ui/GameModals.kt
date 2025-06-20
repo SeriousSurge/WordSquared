@@ -9,6 +9,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.GpsFixed
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Rocket
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,13 +55,30 @@ fun VictoryModal(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Text(
-                    text = "🎉 Congratulations! 🎉",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4169E1),
-                    textAlign = TextAlign.Center
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.EmojiEvents,
+                        contentDescription = "Victory",
+                        tint = Color(0xFF4169E1),
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Text(
+                        text = "Congratulations!",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4169E1),
+                        textAlign = TextAlign.Center
+                    )
+                    Icon(
+                        imageVector = Icons.Default.EmojiEvents,
+                        contentDescription = "Victory",
+                        tint = Color(0xFF4169E1),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
                 Text(
                     text = "You solved the ${gameBoard.difficulty.displayName} word square!",
                     fontSize = 18.sp,
@@ -129,44 +155,73 @@ private fun VictoryDailyStatus(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "Daily puzzle completed! ✓",
-            fontSize = 14.sp,
-            color = Color(0xFF4169E1),
-            textAlign = TextAlign.Center
-        )
-        
-        val nextDifficulty = gameBoard.getNextDifficulty()
-        if (nextDifficulty != null) {
+        if (gameBoard.difficulty != Difficulty.EXPERT && onDifficultyChange != null) {
+            // Show upgrade path
+            val nextDifficulty = when (gameBoard.difficulty) {
+                Difficulty.NORMAL -> Difficulty.HARD
+                Difficulty.HARD -> Difficulty.EXPERT
+                else -> Difficulty.EXPERT
+            }
+            
             Text(
-                text = "Ready for ${nextDifficulty.displayName}?",
-                fontSize = 14.sp,
-                color = Color.Gray,
+                text = "Ready for a bigger challenge?",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
                 textAlign = TextAlign.Center
             )
-            Button(
-                onClick = { 
-                    onDifficultyChange?.invoke(nextDifficulty)
-                    onDismiss()
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4169E1)
-                ),
-                modifier = Modifier.fillMaxWidth()
+            
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Try ${nextDifficulty.displayName}", color = Color.White, fontSize = 16.sp)
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Gray
+                    )
+                ) {
+                    Text("Stay Here", color = Color.White)
+                }
+                Button(
+                    onClick = {
+                        onDifficultyChange(nextDifficulty)
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4169E1)
+                    )
+                ) {
+                    Text("Try ${nextDifficulty.displayName}!", color = Color.White)
+                }
             }
         } else {
             // At expert level, no higher difficulty available
-            Text(
-                text = "🏆 You've mastered all difficulties! 🏆",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF4169E1),
-                textAlign = TextAlign.Center
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EmojiEvents,
+                    contentDescription = "Master",
+                    tint = Color(0xFF4169E1),
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "You've mastered all difficulties!",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4169E1),
+                    textAlign = TextAlign.Center
+                )
+                Icon(
+                    imageVector = Icons.Default.EmojiEvents,
+                    contentDescription = "Master",
+                    tint = Color(0xFF4169E1),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
             Text(
                 text = "Come back tomorrow for new puzzles!",
                 fontSize = 14.sp,
@@ -225,10 +280,13 @@ fun InvalidWordsModal(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "⚠️",
-                                fontSize = 16.sp,
-                                modifier = Modifier.padding(end = 6.dp)
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Warning",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(16.sp.value.dp)
+                                    .padding(end = 6.dp)
                             )
                             Text(
                                 text = "Unable to verify online - using local dictionary only",
@@ -284,16 +342,27 @@ fun InvalidWordsModal(
                 }
                 
                 // Simple tip
-                Text(
-                    text = if (hasNetworkError) {
-                        "💡 Connect to internet for full word validation"
-                    } else {
-                        "💡 Try using synonyms or check spelling"
-                    },
-                    fontSize = 12.sp,
-                    color = Color.Blue,
-                    textAlign = TextAlign.Center
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lightbulb,
+                        contentDescription = "Tip",
+                        tint = Color.Blue,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = if (hasNetworkError) {
+                            "Connect to internet for full word validation"
+                        } else {
+                            "Try using synonyms or check spelling"
+                        },
+                        fontSize = 12.sp,
+                        color = Color.Blue,
+                        textAlign = TextAlign.Center
+                    )
+                }
                 
                 // OK button
                 Button(
@@ -334,27 +403,43 @@ fun TutorialDialog(
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "🧩 How to Play WordSquared",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Extension,
+                        contentDescription = "Puzzle",
+                        tint = Color.Black,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .padding(end = 8.dp)
+                    )
+                    Text(
+                        text = "How to Play WordSquared",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
+                    )
+                }
                 
                 TutorialSection(
-                    title = "🎯 Your Mission",
+                    icon = Icons.Default.GpsFixed,
+                    title = "Your Mission",
                     content = "Fill in the crossword to find the 4 intersecting words that create the crossword."
                 )
                 
                 TutorialSection(
-                    title = "🎮 How It Works",
+                    icon = Icons.Default.SportsEsports,
+                    title = "How It Works",
                     content = "• Tap the outer squares to fill them in\n• Type letters to spell out your words\n• All 4 words must be real dictionary words\n• Orange squares show letters you've tried before"
                 )
                 
                 TutorialSection(
-                    title = "🏆 Challenge Levels",
+                    icon = Icons.Default.EmojiEvents,
+                    title = "Challenge Levels",
                     content = "• Normal: 4×4 crossword\n• Hard: 5×5 crossword\n• Expert: 6×6 crossword"
                 )
 
@@ -365,7 +450,18 @@ fun TutorialDialog(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Let's Play! 🚀", color = Color.White)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text("Let's Play!", color = Color.White)
+                        Icon(
+                            imageVector = Icons.Default.Rocket,
+                            contentDescription = "Launch",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }
@@ -374,16 +470,28 @@ fun TutorialDialog(
 
 @Composable
 private fun TutorialSection(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     content: String
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = title,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF4169E1)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = Color(0xFF4169E1),
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF4169E1)
+            )
+        }
         Text(
             text = content,
             fontSize = 14.sp,

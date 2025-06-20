@@ -4,6 +4,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,12 +57,23 @@ fun GameHeader(
                     color = Color.Gray
                 )
                 if (gameBoard.isDailyPuzzleCompleted()) {
-                    Text(
-                        text = "✓ Daily",
-                        fontSize = 12.sp,
-                        color = Color(0xFF4169E1),
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Completed",
+                            tint = Color(0xFF4169E1),
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = "Daily",
+                            fontSize = 12.sp,
+                            color = Color(0xFF4169E1),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 } else {
                     Text(
                         text = "Daily Puzzle",
@@ -100,10 +116,26 @@ fun GameHeader(
                     .align(Alignment.TopEnd)
                     .padding(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4169E1)
-                )
+                    containerColor = Color(0xFFF5F5DC), // Beige to match theme
+                    contentColor = Color(0xFF4169E1) // Blue text/icon
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("📋", fontSize = 16.sp, color = Color.White)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = "View history",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "History",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
@@ -147,12 +179,23 @@ fun CompactGameHeader(
                 color = Color.Gray
             )
             if (gameBoard.isDailyPuzzleCompleted()) {
-                Text(
-                    text = "✓ Daily",
-                    fontSize = 10.sp,
-                    color = Color(0xFF4169E1),
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Completed",
+                        tint = Color(0xFF4169E1),
+                        modifier = Modifier.size(10.dp)
+                    )
+                    Text(
+                        text = "Daily",
+                        fontSize = 10.sp,
+                        color = Color(0xFF4169E1),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             } else {
                 Text(
                     text = "Daily Puzzle",
@@ -192,13 +235,19 @@ fun CompactGameHeader(
             Button(
                 onClick = onShowHistory,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4169E1)
+                    containerColor = Color(0xFFF5F5DC), // Beige to match theme
+                    contentColor = Color(0xFF4169E1) // Blue text/icon
                 ),
+                shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .width(80.dp)
                     .height(28.dp)
             ) {
-                Text("📋", fontSize = 12.sp, color = Color.White)
+                Icon(
+                    imageVector = Icons.Default.History,
+                    contentDescription = "History",
+                    modifier = Modifier.size(12.dp)
+                )
             }
         }
     }
