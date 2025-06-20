@@ -4,6 +4,7 @@ import com.hiremarknolan.wsq.models.Difficulty
 import com.hiremarknolan.wsq.models.GameConfiguration
 import com.hiremarknolan.wsq.models.InvalidWord
 import com.hiremarknolan.wsq.models.Tile
+import com.hiremarknolan.wsq.models.TileState
 import com.hiremarknolan.wsq.network.CloudWordSquare
 import com.hiremarknolan.wsq.network.WordSquareApiClient
 import com.russhwolf.settings.Settings
@@ -63,17 +64,17 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
         gameState.setPuzzleDate(today)
 
         try {
-            // First, check if we have a complete saved state
+            // Check if we have a complete saved state for the current difficulty
             val savedState = gamePersistence.loadDailyPuzzleState()
             
             if (savedState != null && savedState.puzzleTargets != null && savedState.puzzleGrid != null) {
                 // We have complete saved state, restore from it instead of loading from server
-                println("🔄 Restoring complete state from local storage, avoiding server call")
+                println("🔄 Restoring complete state from local storage for difficulty ${getDifficultyKey()}")
                 loadPuzzleFromSavedState(savedState)
                 gameLogic.restoreGameState(savedState)
             } else {
                 // No complete saved state, load from server
-                println("📡 Loading puzzle from server")
+                println("📡 Loading puzzle from server for difficulty ${getDifficultyKey()}")
                 loadTodaysPuzzle()
             }
         } catch (e: Exception) {
@@ -103,12 +104,17 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
     }
     
     private fun loadPuzzleFromSavedState(savedState: DailyPuzzleState) {
-        // Update grid size if needed
+        // Reset game state first, before any setup
+        gameState.resetForNewGame()
+        
+        // Ensure grid size matches the saved state
         val newGridSize = savedState.puzzleGrid?.size ?: gameState.currentGridSize
         if (newGridSize != gameState.currentGridSize) {
             gameState.updateDifficulty(Difficulty.fromGridSize(newGridSize))
-            gameGrid.updateGridSize()
         }
+        
+        // Always ensure we have a properly sized grid
+        gameGrid.updateGridSize()
 
         // Create target words from saved state
         val targets = savedState.puzzleTargets!!
@@ -119,13 +125,29 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
             left = targets.left
         )
 
-        // Load grid from saved puzzle data
-        gameGrid.loadPuzzleFromGrid(savedState.puzzleGrid!!)
-
-        // Reset game state (will be overridden by state restoration)
-        gameState.resetForNewGame()
+        // Set up the solution from saved puzzle data
+        if (savedState.puzzleGrid != null) {
+            gameGrid.solution = Array(newGridSize) { row ->
+                Array(newGridSize) { col ->
+                    if (row < savedState.puzzleGrid.size && col < savedState.puzzleGrid[row].size) {
+                        savedState.puzzleGrid[row][col].firstOrNull() ?: ' '
+                    } else {
+                        ' '
+                    }
+                }
+            }
+            
+            // Fill interior cells (CENTER state) with the puzzle's interior letters
+            for (row in 1 until newGridSize - 1) {
+                for (col in 1 until newGridSize - 1) {
+                    gameGrid.tiles[row][col].letter = gameGrid.solution[row][col]
+                    gameGrid.tiles[row][col].state = TileState.CENTER
+                }
+            }
+        }
         
-        println("Loaded puzzle from saved state with targets: top=${targets.top}, right=${targets.right}, bottom=${targets.bottom}, left=${targets.left}")
+        println("✅ Loaded puzzle from saved state: size=${newGridSize}, completed=${savedState.isCompleted}")
+        println("🎯 Target words: top=${targets.top}, right=${targets.right}, bottom=${targets.bottom}, left=${targets.left}")
     }
 
     private fun loadPuzzleFromCloud(puzzle: CloudWordSquare) {
@@ -153,9 +175,11 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
 
     // Public API methods - delegate to appropriate modules
     fun changeDifficulty(newDifficulty: Difficulty) {
+        // Update difficulty - this will be used by persistence to load the right saved state
         gameState.updateDifficulty(newDifficulty)
-        gameGrid.updateGridSize()
+        
         scope.launch {
+            // Load the puzzle (and restore state) for the new difficulty
             loadTodaysPuzzleWithStateCheck()
         }
     }

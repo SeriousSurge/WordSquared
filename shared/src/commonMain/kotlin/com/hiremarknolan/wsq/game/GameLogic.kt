@@ -162,17 +162,41 @@ class GameLogic(
     
     fun restoreGameState(state: DailyPuzzleState) {
         try {
+            println("🔄 Restoring game state: completed=${state.isCompleted}, tiles=${state.tiles.size}x${state.tiles.firstOrNull()?.size}")
+            
+            // Validate the saved state
+            if (state.tiles.isEmpty()) {
+                println("⚠️ WARNING: Saved state has no tiles data!")
+                return
+            }
+            
+            // Check for consistent row sizes
+            val expectedCols = state.tiles.firstOrNull()?.size ?: 0
+            val inconsistentRows = state.tiles.mapIndexedNotNull { index, row ->
+                if (row.size != expectedCols) index else null
+            }
+            if (inconsistentRows.isNotEmpty()) {
+                println("⚠️ WARNING: Inconsistent row sizes in saved state at rows: $inconsistentRows")
+            }
+            
+            // Count letters in saved state
+            val savedLetterCount = state.tiles.flatten().count { it.letter != ' ' }
+            println("📥 Saved state contains $savedLetterCount tiles with letters")
+            
             gameGrid.restoreFromState(state.tiles)
             
             if (state.isCompleted) {
+                println("✅ Restoring completed game state")
                 restoreCompletedGameState(state)
             } else {
+                println("⏳ Restoring in-progress game state")
                 restoreInProgressGameState(state)
             }
             
             println("Restored daily puzzle state: completed=${state.isCompleted}, score=${state.completionScore}")
         } catch (e: Exception) {
             println("Failed to restore daily puzzle state: ${e.message}")
+            e.printStackTrace()
         }
     }
     

@@ -109,6 +109,27 @@ class GamePersistence(
         }
     }
     
+    fun loadDailyPuzzleStateForDifficulty(difficulty: String): DailyPuzzleState? {
+        if (!enableStatePersistence) return null
+        
+        try {
+            val key = "daily_puzzle_${gameState.currentPuzzleDate}_${difficulty}"
+            val json = settings.getString(key, "")
+            
+            return if (json.isNotEmpty()) {
+                val state = Json.decodeFromString<DailyPuzzleState>(json)
+                println("📥 Loaded daily puzzle state for specific difficulty: ${state.date} $difficulty, elapsed: ${state.elapsedTime}s, completed: ${state.isCompleted}")
+                state
+            } else {
+                println("📭 No saved state found for ${gameState.currentPuzzleDate} $difficulty")
+                null
+            }
+        } catch (e: Exception) {
+            println("Failed to load daily puzzle state for difficulty $difficulty: ${e.message}")
+            return null
+        }
+    }
+    
     fun getSavedElapsedTime(): Long {
         val savedState = loadDailyPuzzleState()
         return savedState?.elapsedTime ?: 0L

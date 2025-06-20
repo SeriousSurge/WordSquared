@@ -111,17 +111,50 @@ class GameGrid(private val gameState: GameState) {
     
     fun restoreFromState(tileStates: List<List<TileStateData>>) {
         if (tileStates.isNotEmpty()) {
+            println("🔄 Restoring ${tileStates.size}x${tileStates.firstOrNull()?.size} tile states to ${tiles.size}x${tiles.firstOrNull()?.size} grid")
+            
+            // Verify grid dimensions match
+            if (tileStates.size != tiles.size) {
+                println("⚠️ WARNING: Grid size mismatch! Saved: ${tileStates.size}, Current: ${tiles.size}")
+            }
+            
+            var restoredCount = 0
+            var skippedCount = 0
+            
             for (row in tiles.indices) {
                 for (col in tiles[row].indices) {
                     if (row < tileStates.size && col < tileStates[row].size) {
                         val savedTile = tileStates[row][col]
-                        tiles[row][col].letter = savedTile.letter
-                        tiles[row][col].state = savedTile.state
-                        tiles[row][col].previousAttempts.clear()
-                        tiles[row][col].previousAttempts.addAll(savedTile.previousAttempts)
+                        val currentTile = tiles[row][col]
+                        
+                        // Store the old values for comparison
+                        val oldLetter = currentTile.letter
+                        val oldState = currentTile.state
+                        
+                        // Restore the tile state
+                        currentTile.letter = savedTile.letter
+                        currentTile.state = savedTile.state
+                        currentTile.previousAttempts.clear()
+                        currentTile.previousAttempts.addAll(savedTile.previousAttempts)
+                        
+                        if (savedTile.letter != ' ') {
+                            println("🔤 Restored tile [$row,$col]: '${savedTile.letter}' (state: ${savedTile.state})")
+                            restoredCount++
+                        }
+                    } else {
+                        println("⚠️ Skipping tile [$row,$col] - out of bounds in saved state")
+                        skippedCount++
                     }
                 }
             }
+            
+            println("✅ Restoration complete: $restoredCount tiles with letters restored, $skippedCount skipped")
+            
+            // Double-check: count how many tiles currently have letters
+            val currentLetterCount = tiles.flatten().count { it.letter != ' ' }
+            println("📊 Current grid has $currentLetterCount tiles with letters")
+        } else {
+            println("⚠️ No tile states to restore")
         }
     }
     
