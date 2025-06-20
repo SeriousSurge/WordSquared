@@ -1,0 +1,17 @@
+{
+  "name": "generate-puzzles",
+  "version": "1.0.0",
+  "description": "Cloud function to generate word square puzzles",
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.3.0",
+    "@google-cloud/storage": "^7.7.0"
+  },
+  "scripts": {
+    "start": "functions-framework --target=generatePuzzles",
+    "deploy": "gcloud functions deploy generate-puzzles --runtime nodejs20 --trigger-http --allow-unauthenticated --entry-point generatePuzzles"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+} 

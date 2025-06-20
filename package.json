@@ -1,0 +1,15 @@
+{
+  "name": "word-square-api",
+  "version": "1.0.0",
+  "description": "Serverless API for word square puzzles",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod",
+    "deploy:web": "./gradlew :wasmApp:wasmJsBrowserDistribution && rm -rf public && mkdir public && cp -r wasmApp/build/dist/wasmJs/productionExecutable/* public/ && firebase deploy --only hosting",
+    "test": "node ./test/validation.test.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  }
+} 

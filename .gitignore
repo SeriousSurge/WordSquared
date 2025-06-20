@@ -1,0 +1,17 @@
+*.iml
+.gradle
+.idea
+.DS_Store
+.kotlin
+build
+captures
+.externalNativeBuild
+.cxx
+local.properties
+xcuserdata
+public/*.wasm
+public/wasmApp.js
+node_modules/
+.firebase/
+.firebase
+**/build/
