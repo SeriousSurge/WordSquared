@@ -5,7 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -21,6 +23,8 @@ import androidx.compose.material.icons.filled.Rocket
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,6 +35,54 @@ import androidx.compose.ui.unit.sp
 import com.hiremarknolan.wsq.game.WordBoard
 import com.hiremarknolan.wsq.models.Difficulty
 import com.hiremarknolan.wsq.models.InvalidWord
+import com.hiremarknolan.wsq.LocalModalHost
+
+/**
+ * A modal that extends to the true edges of the screen, behind system UI.
+ * This uses the root-level modal system for proper edge-to-edge display.
+ * Content is constrained to 80% of screen dimensions and is scrollable.
+ */
+@Composable
+fun EdgeToEdgeModal(
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val modalHost = LocalModalHost.current
+    val scrollState = rememberScrollState()
+    
+    LaunchedEffect(Unit) {
+        modalHost.showModal(
+            content = {
+                                BoxWithConstraints {
+                    val maxModalWidth = (maxWidth * 0.8f).coerceAtMost(600.dp)
+                    val maxModalHeight = (maxHeight * 0.8f).coerceAtMost(700.dp)
+                    
+                    Box(
+                        modifier = Modifier
+                            .widthIn(max = maxModalWidth)
+                            .heightIn(max = maxModalHeight)
+                            .background(Color.White, RoundedCornerShape(16.dp))
+                            .clickable { /* Consume clicks to prevent dismissal */ }
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .verticalScroll(scrollState)
+                                .padding(24.dp),
+                            content = content
+                        )
+                    }
+                }
+            },
+            onDismiss = onDismiss
+        )
+    }
+    
+    DisposableEffect(Unit) {
+        onDispose {
+            modalHost.hideModal()
+        }
+    }
+}
 
 @Composable
 fun VictoryModal(
@@ -39,24 +91,7 @@ fun VictoryModal(
     onDismiss: () -> Unit,
     onDifficultyChange: ((Difficulty) -> Unit)? = null
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.8f))
-            .clickable { onDismiss() },
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .background(Color.White, RoundedCornerShape(16.dp))
-                .clickable { /* consume clicks */ }
-                .padding(32.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
+    EdgeToEdgeModal(onDismiss = onDismiss) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -95,15 +130,13 @@ fun VictoryModal(
                     score = gameBoard.score
                 )
                 
-                // Show completion status for daily puzzles
-                if (gameBoard.isDailyPuzzleCompleted()) {
-                    VictoryDailyStatus(
-                        gameBoard = gameBoard, 
-                        onDismiss = onDismiss,
-                        onDifficultyChange = onDifficultyChange
-                    )
-                }
-            }
+        // Show completion status for daily puzzles
+        if (gameBoard.isDailyPuzzleCompleted()) {
+            VictoryDailyStatus(
+                gameBoard = gameBoard, 
+                onDismiss = onDismiss,
+                onDifficultyChange = onDifficultyChange
+            )
         }
     }
 }
@@ -240,24 +273,7 @@ fun InvalidWordsModal(
     onDismiss: () -> Unit,
     hasNetworkError: Boolean = false
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.8f))
-            .clickable { onDismiss() },
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .background(Color.White, RoundedCornerShape(16.dp))
-                .clickable { /* consume clicks */ }
-                .padding(24.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+    EdgeToEdgeModal(onDismiss = onDismiss) {
                 // Title
                 Text(
                     text = "Words Not Accepted",
@@ -366,20 +382,18 @@ fun InvalidWordsModal(
                     )
                 }
                 
-                // OK button
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.padding(top = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4169E1)
-                    )
-                ) {
-                    Text(
-                        text = "Try Again",
-                        color = Color.White
-                    )
-                }
-            }
+        // OK button
+        Button(
+            onClick = onDismiss,
+            modifier = Modifier.padding(top = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF4169E1)
+            )
+        ) {
+            Text(
+                text = "Try Again",
+                color = Color.White
+            )
         }
     }
 }
@@ -388,23 +402,7 @@ fun InvalidWordsModal(
 fun TutorialDialog(
     onDismiss: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.8f))
-            .clickable { onDismiss() },
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .width(300.dp)
-                .background(Color.White, RoundedCornerShape(16.dp))
-                .padding(24.dp)
-                .clickable { /* Prevent click from closing dialog */ }
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+    EdgeToEdgeModal(onDismiss = onDismiss) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -412,6 +410,7 @@ fun TutorialDialog(
                 ) {
                     Text(
                         text = "How to Play WordSquared",
+                        modifier = Modifier.padding(bottom = 16.dp),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -441,7 +440,7 @@ fun TutorialDialog(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4169E1)
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -456,8 +455,6 @@ fun TutorialDialog(
                         )
                     }
                 }
-            }
-        }
     }
 }
 

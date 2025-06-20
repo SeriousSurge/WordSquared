@@ -13,6 +13,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hiremarknolan.wsq.models.Difficulty
+import com.hiremarknolan.wsq.LocalModalHost
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 
 @Composable
 fun HamburgerMenuOverlay(
@@ -76,24 +79,41 @@ private fun MenuOverlay(
     onDifficultySelected: (Difficulty) -> Unit,
     onShowTutorial: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
-            .clickable { onDismiss() }
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .width(200.dp)
-                .background(Color.White, RoundedCornerShape(8.dp))
-                .padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            MenuHeader()
-            DifficultySection(onDifficultySelected = onDifficultySelected)
-            MenuDivider()
-            TutorialMenuItem(onClick = onShowTutorial)
+    val modalHost = LocalModalHost.current
+    
+    LaunchedEffect(Unit) {
+        modalHost.showModal(
+            content = {
+                // Position the menu in the top-left area, respecting safe areas
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout)),
+                    contentAlignment = Alignment.TopStart
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .width(220.dp)
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                            .padding(8.dp)
+                            .clickable { /* Consume clicks to prevent dismissal */ },
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        MenuHeader()
+                        DifficultySection(onDifficultySelected = onDifficultySelected)
+                        MenuDivider()
+                        TutorialMenuItem(onClick = onShowTutorial)
+                    }
+                }
+            },
+            onDismiss = onDismiss
+        )
+    }
+    
+    DisposableEffect(Unit) {
+        onDispose {
+            modalHost.hideModal()
         }
     }
 }

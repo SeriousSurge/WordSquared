@@ -31,13 +31,7 @@ fun PreviousGuessesModal(
     gameBoard: WordBoard,
     onDismiss: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.6f))
-            .clickable { onDismiss() },
-        contentAlignment = Alignment.Center
-    ) {
+    EdgeToEdgeModal(onDismiss = onDismiss) {
         Box(
             modifier = Modifier
                 .width(300.dp)
