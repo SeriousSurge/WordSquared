@@ -68,6 +68,8 @@ fun EdgeToEdgeModal(
                             modifier = Modifier
                                 .verticalScroll(scrollState)
                                 .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(20.dp),
                             content = content
                         )
                     }

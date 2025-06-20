@@ -196,7 +196,7 @@ fun SplitKeyboardRight(
         // Submit button
         Box(
             modifier = Modifier
-                .width(80.dp)
+                .wrapContentWidth()
                 .height(36.dp)
                 .background(Color(0xFF4169E1), RoundedCornerShape(4.dp))
                 .clickable { onEnter() },
