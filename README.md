@@ -75,7 +75,7 @@ WordSquared is a crossword-style puzzle game where:
   - **Normal**: 4x4 grid
   - **Hard**: 5x5 grid  
   - **Expert**: 6x6 grid
-- **Smart Word Validation**: Real-time validation using Datamuse API
+ - **Smart Word Validation**: Real-time validation using a local dictionary file
 - **Visual Feedback**: Color-coded tiles show progress and hints
 - **Score System**: Points based on completion time and guess efficiency
 
@@ -111,7 +111,7 @@ WordSquared is a crossword-style puzzle game where:
 ### Backend & Services
 - **Firebase Hosting**: Web app deployment
 - **Firebase Cloud Functions**: Daily puzzle generation and distribution
-- **Datamuse API**: Word validation and dictionary services
+ - **Cloud-hosted Dictionary**: Word lists served via Cloud Function
 - **Multiplatform Settings**: Cross-platform preferences storage
 
 ### Platform-Specific Dependencies

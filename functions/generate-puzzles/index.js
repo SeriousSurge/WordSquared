@@ -1,4 +1,3 @@
-const axios = require('axios');
 const { Storage } = require('@google-cloud/storage');
 const wordsData = require('./words.json');
 
@@ -12,15 +11,6 @@ const WORD_LISTS = {
   hard: wordsData['6_letter_words']
 };
 
-async function isValidWord(word) {
-  try {
-    const response = await axios.get(`https://api.datamuse.com/words?sp=${word}&max=1`);
-    return response.data.length > 0;
-  } catch (error) {
-    console.error('Error checking word:', error);
-    return false;
-  }
-}
 
 async function generateWordSquare(size) {
   const wordList = WORD_LISTS[size === 4 ? 'easy' : size === 5 ? 'medium' : 'hard'];

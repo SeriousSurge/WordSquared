@@ -1,10 +1,11 @@
 package com.wsq.server.service
 
 import com.wsq.server.models.*
-import kotlinx.serialization.json.*
-import io.ktor.client.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import java.nio.file.Files
+import java.nio.file.Paths
 import kotlin.random.Random
 import java.time.LocalDate
 
@@ -16,8 +17,21 @@ data class WordSquareWords(
     val leftWord: String
 )
 
+@Serializable
+data class WordsData(
+    val `4_letter_words`: List<String>,
+    val `5_letter_words`: List<String>,
+    val `6_letter_words`: List<String>
+)
+
 class WordSquareGenerator {
-    private val client = HttpClient()
+
+    // Load the local word lists once
+    private val wordsData: WordsData = run {
+        val path = Paths.get("server/words.json")
+        val text = Files.readString(path)
+        Json.decodeFromString(text)
+    }
     
     suspend fun generateWordSquare(size: Int, seed: Long): WordSquarePuzzle {
         val random = Random(seed)
@@ -70,29 +84,29 @@ class WordSquareGenerator {
         )
     }
     
-    private suspend fun fetchWord(pattern: String, random: Random): String? {
+    private fun fetchWord(pattern: String, random: Random, list: List<String>): String? {
         return try {
-            val response = client.get("https://api.datamuse.com/words?sp=$pattern&max=50")
-            val jsonArray = Json.parseToJsonElement(response.bodyAsText()).jsonArray
-            
-            val filteredWords = jsonArray.mapNotNull { 
-                it.jsonObject["word"]?.jsonPrimitive?.content?.uppercase()
-            }.filter { 
-                it.length == pattern.length && it.all { c -> c.isLetter() }
-            }
-            
-            if (filteredWords.isNotEmpty()) {
-                filteredWords[random.nextInt(filteredWords.size)]
+            val regex = pattern.replace("?", ".").toRegex(RegexOption.IGNORE_CASE)
+            val matches = list.filter { regex.matches(it) }
+            if (matches.isNotEmpty()) {
+                matches[random.nextInt(matches.size)].uppercase()
             } else {
                 null
             }
         } catch (e: Exception) {
-            println("Error fetching word for pattern $pattern: ${e.message}")
+            println("Error selecting word for pattern $pattern: ${e.message}")
             null
         }
     }
     
-    private suspend fun generateIntersectingWords(size: Int, random: Random): WordSquareWords {
+    private fun generateIntersectingWords(size: Int, random: Random): WordSquareWords {
+        val list = when (size) {
+            4 -> wordsData.`4_letter_words`
+            5 -> wordsData.`5_letter_words`
+            6 -> wordsData.`6_letter_words`
+            else -> emptyList()
+        }
+
         var attempts = 0
         
         while (attempts < 20) {
@@ -101,19 +115,19 @@ class WordSquareGenerator {
                 val randomLetter = ('A'..'Z').random(random)
                 
                 // Generate main word (top row)
-                val topWord = fetchWord("$randomLetter${"?".repeat(size - 1)}", random)
+                val topWord = fetchWord("$randomLetter${"?".repeat(size - 1)}", random, list)
                     ?: continue
                 
                 // Get word starting with first letter of main word (left column)
-                val leftWord = fetchWord("${topWord[0]}${"?".repeat(size - 1)}", random)
+                val leftWord = fetchWord("${topWord[0]}${"?".repeat(size - 1)}", random, list)
                     ?: continue
                 
                 // Get word starting with last letter of main word (right column)
-                val rightWord = fetchWord("${topWord[size - 1]}${"?".repeat(size - 1)}", random)
+                val rightWord = fetchWord("${topWord[size - 1]}${"?".repeat(size - 1)}", random, list)
                     ?: continue
                 
                 // Get word connecting last letters of left and right words (bottom row)
-                val bottomWord = fetchWord("${leftWord[size - 1]}${"?".repeat(size - 2)}${rightWord[size - 1]}", random)
+                val bottomWord = fetchWord("${leftWord[size - 1]}${"?".repeat(size - 2)}${rightWord[size - 1]}", random, list)
                     ?: continue
                 
                 return WordSquareWords(topWord, rightWord, bottomWord, leftWord)

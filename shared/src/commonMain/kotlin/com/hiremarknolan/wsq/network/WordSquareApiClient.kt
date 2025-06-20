@@ -54,8 +54,6 @@ data class WordsData(
     val `6_letter_words`: List<String>
 )
 
-@Serializable
-data class DatamuseWord(val word: String)
 
 class WordSquareApiClient(private val settings: Settings) {
     private val client = HttpClient {
@@ -263,25 +261,40 @@ class WordSquareApiClient(private val settings: Settings) {
     }
     
     /**
-     * Load word lists from the JSON resource file
+     * Load word lists. Tries persistent settings first for offline usage, then
+     * bundled resources as a fallback.
      */
     private suspend fun loadWordsData(): WordsData {
         if (wordsData == null) {
             try {
-                // Try to load from resources
-                val resourceText = try {
-                    // This will be implemented per platform
-                    loadWordsFromResources()
-                } catch (e: Exception) {
-                    println("Failed to load from resources: ${e.message}")
-                    null
+                // 1. Try to load previously fetched words from settings
+                val storedJson = settings.getString("words_data", "")
+                if (storedJson.isNotEmpty()) {
+                    try {
+                        wordsData = Json.decodeFromString<WordsData>(storedJson)
+                        println("📚 Loaded word lists from settings with ${wordsData!!.`4_letter_words`.size} 4-letter, ${wordsData!!.`5_letter_words`.size} 5-letter, ${wordsData!!.`6_letter_words`.size} 6-letter words")
+                    } catch (e: Exception) {
+                        println("Failed to parse stored words: ${e.message}")
+                    }
                 }
-                
-                if (resourceText != null) {
-                    wordsData = Json.decodeFromString<WordsData>(resourceText)
-                    println("📚 Loaded comprehensive word lists with ${wordsData!!.`4_letter_words`.size} 4-letter, ${wordsData!!.`5_letter_words`.size} 5-letter, ${wordsData!!.`6_letter_words`.size} 6-letter words")
-                } else {
-                    // Fallback to hardcoded basic set
+
+                // 2. If not found in settings, load from bundled resources
+                if (wordsData == null) {
+                    val resourceText = try {
+                        loadWordsFromResources()
+                    } catch (e: Exception) {
+                        println("Failed to load from resources: ${e.message}")
+                        null
+                    }
+
+                    if (resourceText != null) {
+                        wordsData = Json.decodeFromString<WordsData>(resourceText)
+                        println("📚 Loaded bundled word lists with ${wordsData!!.`4_letter_words`.size} 4-letter, ${wordsData!!.`5_letter_words`.size} 5-letter, ${wordsData!!.`6_letter_words`.size} 6-letter words")
+                    }
+                }
+
+                // 3. Fallback to a minimal hardcoded set
+                if (wordsData == null) {
                     wordsData = WordsData(
                         `4_letter_words` = listOf("able", "back", "call", "came", "care", "case", "city", "come", "cool", "data", "date", "days", "deal", "deep", "door", "each", "east", "easy", "even", "ever", "face", "fact", "fair", "fall", "fast", "feel", "file", "find", "fire", "five", "form", "four", "free", "from", "full", "game", "give", "good", "hand", "have", "head", "help", "here", "high", "home", "hour", "idea", "into", "just", "keep", "kind", "know", "land", "last", "late", "left", "life", "like", "line", "live", "long", "look", "love", "made", "make", "many", "more", "most", "move", "much", "name", "need", "next", "only", "open", "over", "pain", "part", "pest", "play", "read", "real", "said", "same", "show", "side", "some", "take", "tell", "than", "that", "them", "they", "this", "time", "very", "want", "ways", "well", "were", "what", "when", "will", "with", "word", "work", "year", "your"),
                         `5_letter_words` = listOf("about", "after", "again", "begin", "being", "black", "bring", "build", "could", "every", "first", "found", "given", "great", "group", "hands", "house", "large", "light", "might", "money", "never", "night", "order", "other", "place", "point", "right", "shall", "small", "sound", "start", "state", "still", "their", "there", "these", "thing", "think", "three", "today", "under", "water", "where", "which", "while", "white", "whole", "world", "would", "write", "young"),
@@ -344,45 +357,30 @@ class WordSquareApiClient(private val settings: Settings) {
         
         return result
     }
-    
+
     /**
-     * Online validation using datamuse API
+     * Fetch updated word lists from the server and persist them for future offline use.
      */
-    suspend fun isValidWordOnline(word: String): Boolean {
+    suspend fun updateWordsDataFromServer(): Boolean {
         return try {
-            val response = client.get("https://api.datamuse.com/words?sp=${word.lowercase()}").body<List<DatamuseWord>>()
-            
-            response.any {
-                it.word.lowercase() == word.lowercase()
-            }
+            val newData = client.get("$baseUrl/get-words").body<WordsData>()
+            wordsData = newData
+            settings.putString("words_data", Json.encodeToString(newData))
+            println("🔄 Updated word lists from server")
+            true
         } catch (e: Exception) {
-            println("isValidWordOnline failed: ${e.message}")
+            println("⚠️  Failed to update word lists: ${e.message}")
             false
         }
     }
     
     /**
-     * Comprehensive word validation - tries offline first (faster), then online if needed
+     * Comprehensive word validation using only the offline dictionary.
      */
     suspend fun isValidWord(word: String): Boolean {
-        // Try offline validation first (fast and reliable)
-        val offlineResult = isValidWordOffline(word)
-        println("🔍 Offline validation for '$word': $offlineResult")
-        
-        if (offlineResult) {
-            return true
-        }
-        
-        // If offline validation fails, try online as fallback (but don't fail silently)
-        println("⚠️  '$word' not found in offline dictionary, trying online validation...")
-        return try {
-            val onlineResult = isValidWordOnline(word)
-            println("🌐 Online validation for '$word': $onlineResult")
-            onlineResult
-        } catch (e: Exception) {
-            println("❌ Online validation failed for '$word': ${e.message}")
-            false
-        }
+        val result = isValidWordOffline(word)
+        println("🔍 Offline validation for '$word': $result")
+        return result
     }
     
     /**

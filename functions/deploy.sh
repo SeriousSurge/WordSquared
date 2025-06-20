@@ -32,11 +32,25 @@ gcloud functions deploy get-puzzle \
 
 cd ..
 
+# Deploy words function
+echo "📚 Deploying words function..."
+cd get-words
+gcloud functions deploy get-words \
+  --runtime nodejs20 \
+  --trigger-http \
+  --allow-unauthenticated \
+  --entry-point getWords \
+  --memory 128MB \
+  --timeout 60s
+
+cd ..
+
 echo "✅ Deployment complete!"
 echo ""
 echo "🔗 Your functions are now live:"
 echo "Generator: https://us-central1-PROJECT_ID.cloudfunctions.net/generate-puzzles"
 echo "Getter: https://us-central1-PROJECT_ID.cloudfunctions.net/get-puzzle"
+echo "Words: https://us-central1-PROJECT_ID.cloudfunctions.net/get-words"
 echo ""
 echo "📅 To generate puzzles for 7 days:"
 echo "curl 'https://us-central1-PROJECT_ID.cloudfunctions.net/generate-puzzles?days=7'"

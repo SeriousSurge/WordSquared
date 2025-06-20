@@ -1,0 +1,15 @@
+{
+  "name": "get-words",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.3.0"
+  },
+  "scripts": {
+    "start": "functions-framework --target=getWords",
+    "deploy": "gcloud functions deploy get-words --runtime nodejs20 --trigger-http --allow-unauthenticated --entry-point getWords"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
