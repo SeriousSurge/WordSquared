@@ -46,12 +46,14 @@ class GameLogic(
             if (!validationResult.isValid) {
                 if (validationResult.invalidWords.isNotEmpty()) {
                     // Show invalid words modal
-                    gameState.setInvalidWords(validationResult.invalidWords)
+                    val hasNetworkError = validationResult.errorMessage?.contains("connection") == true ||
+                                        validationResult.errorMessage?.contains("online") == true
+                    gameState.setInvalidWords(validationResult.invalidWords, hasNetworkError)
                     println("❌ Word validation failed: ${validationResult.invalidWords.size} invalid words")
                 } else {
                     // Show general error message (e.g., network error)
                     gameState.setError(validationResult.errorMessage)
-                    println("❌ Word validation failed: ${validationResult.errorMessage}")
+                    println("❌ Validation error: ${validationResult.errorMessage}")
                 }
                 return
             }

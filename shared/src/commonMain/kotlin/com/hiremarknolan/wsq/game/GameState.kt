@@ -42,6 +42,9 @@ class GameState(initialGridSize: Int = 4) {
     var invalidWords: List<InvalidWord> by mutableStateOf(emptyList())
         internal set
     
+    var hasNetworkError: Boolean by mutableStateOf(false)
+        internal set
+    
     var previousGuesses: List<String> by mutableStateOf(emptyList())
         internal set
     
@@ -68,14 +71,16 @@ class GameState(initialGridSize: Int = 4) {
     
     fun setError(message: String?) {
         errorMessage = message
-        // Clear invalid words when setting a general error
+        // Clear invalid words and network error when setting a general error
         if (message != null) {
             invalidWords = emptyList()
+            hasNetworkError = false
         }
     }
     
-    fun setInvalidWords(words: List<InvalidWord>) {
+    fun setInvalidWords(words: List<InvalidWord>, networkError: Boolean = false) {
         invalidWords = words
+        hasNetworkError = networkError
         // Clear general error message when setting invalid words
         errorMessage = null
     }
@@ -83,6 +88,7 @@ class GameState(initialGridSize: Int = 4) {
     fun clearValidationErrors() {
         errorMessage = null
         invalidWords = emptyList()
+        hasNetworkError = false
     }
     
     fun setPuzzleDate(date: String) {
@@ -115,6 +121,7 @@ class GameState(initialGridSize: Int = 4) {
         score = 0
         errorMessage = null
         invalidWords = emptyList()
+        hasNetworkError = false
         previousGuesses = emptyList()
         completionTime = 0L
         startTime = Clock.System.now().toEpochMilliseconds()
@@ -128,6 +135,7 @@ class GameState(initialGridSize: Int = 4) {
         score = 0
         errorMessage = null
         invalidWords = emptyList()
+        hasNetworkError = false
         previousGuesses = emptyList()
         completionTime = 0L
         // Don't reset startTime - preserve timing across difficulty changes

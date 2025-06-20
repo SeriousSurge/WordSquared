@@ -40,6 +40,7 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
     val guessCount: Int get() = gameState.guessCount
     val errorMessage: String? get() = gameState.errorMessage
     val invalidWords: List<InvalidWord> get() = gameState.invalidWords
+    val hasNetworkError: Boolean get() = gameState.hasNetworkError
     val previousGuesses: List<String> get() = gameState.previousGuesses
     val isLoading: Boolean get() = gameState.isLoading
     val currentPuzzleDate: String get() = gameState.currentPuzzleDate

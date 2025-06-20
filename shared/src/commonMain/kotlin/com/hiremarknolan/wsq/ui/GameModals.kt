@@ -3,6 +3,8 @@ package com.hiremarknolan.wsq.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -178,7 +180,8 @@ private fun VictoryDailyStatus(
 @Composable
 fun InvalidWordsModal(
     invalidWords: List<InvalidWord>,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    hasNetworkError: Boolean = false
 ) {
     Box(
         modifier = Modifier
@@ -198,79 +201,75 @@ fun InvalidWordsModal(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Title
                 Text(
-                    text = "❌ Invalid Words",
+                    text = "Words Not Accepted",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Red,
-                    textAlign = TextAlign.Center
+                    color = Color.Red
                 )
                 
+                // Description based on error type
                 Text(
-                    text = "The following words are not accepted:",
+                    text = if (hasNetworkError) {
+                        "Some words are not in our local dictionary and we couldn't verify them online. Please check your internet connection and try again."
+                    } else {
+                        "The following words are not accepted. Please check your spelling:"
+                    },
                     fontSize = 14.sp,
                     color = Color.Gray,
                     textAlign = TextAlign.Center
                 )
                 
                 // List of invalid words
-                Column(
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 200.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    invalidWords.forEach { invalidWord ->
-                        InvalidWordItem(
-                            word = invalidWord.word,
-                            position = invalidWord.position
-                        )
+                    items(invalidWords) { invalidWord ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.Red.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "\"${invalidWord.word.uppercase()}\"",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Red
+                            )
+                            Text(
+                                text = "(${invalidWord.position})",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
                     }
                 }
                 
+                // Additional help text
+                if (hasNetworkError) {
+                    Text(
+                        text = "💡 Tip: Words in our local dictionary will work even offline!",
+                        fontSize = 12.sp,
+                        color = Color.Blue,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                
+                // OK button
                 Button(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4169E1)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.padding(top = 8.dp)
                 ) {
-                    Text("Try Again", color = Color.White, fontSize = 16.sp)
+                    Text("OK")
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun InvalidWordItem(
-    word: String,
-    position: String
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFFFF5F5), RoundedCornerShape(8.dp))
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column {
-            Text(
-                text = word.uppercase(),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Red
-            )
-            Text(
-                text = "${position.replaceFirstChar { it.uppercase() }} word",
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-        }
-        Text(
-            text = "✗",
-            fontSize = 20.sp,
-            color = Color.Red,
-            fontWeight = FontWeight.Bold
-        )
     }
 }
 

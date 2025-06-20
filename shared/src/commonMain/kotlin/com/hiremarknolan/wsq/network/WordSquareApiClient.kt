@@ -1,15 +1,26 @@
 package com.hiremarknolan.wsq.network
 
-import com.hiremarknolan.wsq.data.WordLists
 import io.ktor.client.*
-import io.ktor.client.call.body
+import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.*
 import kotlinx.serialization.Serializable
 import kotlinx.datetime.*
 import com.russhwolf.settings.Settings
+import com.hiremarknolan.wsq.data.WordLists
+
+/**
+ * Data model for Datamuse API responses
+ */
+@Serializable
+data class DatamuseWord(
+    val word: String,
+    val score: Int? = null
+)
 
 @Serializable
 data class CloudWordSquare(
@@ -57,7 +68,7 @@ data class WordsData(
 
 
 class WordSquareApiClient(private val settings: Settings) {
-    private val client = HttpClient {
+    private val httpClient = HttpClient {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
@@ -107,7 +118,7 @@ class WordSquareApiClient(private val settings: Settings) {
         // 3. Only hit the server as last resort
         return try {
             println("📡 No local cache found, fetching today's puzzle from server and caching next 7 days...")
-            val puzzleResponse = client.get("$baseUrl/get-puzzle").body<CloudPuzzleResponse>()
+            val puzzleResponse = httpClient.get("$baseUrl/get-puzzle").body<CloudPuzzleResponse>()
             
             // Cache today's puzzle in both memory and persistent storage
             puzzleCache[todayString] = puzzleResponse
@@ -148,7 +159,7 @@ class WordSquareApiClient(private val settings: Settings) {
                 
                 // Only fetch from server if not in persistent storage
                 try {
-                    val puzzleResponse = client.get("$baseUrl/get-puzzle?date=$dateString").body<CloudPuzzleResponse>()
+                    val puzzleResponse = httpClient.get("$baseUrl/get-puzzle?date=$dateString").body<CloudPuzzleResponse>()
                     
                     // Cache in memory and persistent storage
                     puzzleCache[dateString] = puzzleResponse
@@ -326,37 +337,73 @@ class WordSquareApiClient(private val settings: Settings) {
     }
 
     /**
-     * Offline word validation using loaded word lists
+     * Primary validation method - checks local lists first, then API fallback
+     */
+    suspend fun isValidWord(word: String): Boolean {
+        return try {
+            // First, check our local word lists
+            val localResult = isValidWordOffline(word)
+            if (localResult) {
+                println("✅ Word '$word' found in local dictionary")
+                return true
+            }
+            
+            // If not found locally, try API validation
+            println("🌐 Word '$word' not in local dictionary, checking API...")
+            val apiResult = isValidWordOnline(word)
+            if (apiResult) {
+                println("✅ Word '$word' validated via API")
+            } else {
+                println("❌ Word '$word' not found in API either")
+            }
+            apiResult
+        } catch (e: Exception) {
+            println("⚠️ API validation failed for '$word': ${e.message}")
+            // If API fails, return false - word not in local list and can't verify online
+            false
+        }
+    }
+
+    /**
+     * Check word against local word lists only
      */
     suspend fun isValidWordOffline(word: String): Boolean {
         val words = loadWordsData()
         val cleanWord = word.lowercase().trim()
         
-        println("📖 Checking word '$cleanWord' (length: ${cleanWord.length}) in offline dictionary...")
-        
-        val result = when (cleanWord.length) {
-            4 -> {
-                val found = words.`4_letter_words`.contains(cleanWord)
-                println("   4-letter word list has ${words.`4_letter_words`.size} words, contains '$cleanWord': $found")
-                found
-            }
-            5 -> {
-                val found = words.`5_letter_words`.contains(cleanWord)
-                println("   5-letter word list has ${words.`5_letter_words`.size} words, contains '$cleanWord': $found")
-                found
-            }
-            6 -> {
-                val found = words.`6_letter_words`.contains(cleanWord)
-                println("   6-letter word list has ${words.`6_letter_words`.size} words, contains '$cleanWord': $found")
-                found
-            }
-            else -> {
-                println("   Unsupported word length: ${cleanWord.length}")
+        return when (cleanWord.length) {
+            4 -> words.`4_letter_words`.contains(cleanWord)
+            5 -> words.`5_letter_words`.contains(cleanWord)
+            6 -> words.`6_letter_words`.contains(cleanWord)
+            else -> false
+        }
+    }
+
+    /**
+     * Check word using Datamuse API
+     */
+    private suspend fun isValidWordOnline(word: String): Boolean {
+        return try {
+            val cleanWord = word.lowercase().trim()
+            
+            // Use Datamuse API to check if word exists
+            // sp= parameter finds words spelled similarly (exact match when word is correct)
+            val url = "https://api.datamuse.com/words?sp=${cleanWord}&max=1"
+            
+            val response = httpClient.get(url)
+            if (response.status.value in 200..299) {
+                val results = response.body<List<DatamuseWord>>()
+                // Check if we got an exact match
+                val exactMatch = results.any { it.word.equals(cleanWord, ignoreCase = true) }
+                exactMatch
+            } else {
+                println("⚠️ Datamuse API returned status: ${response.status}")
                 false
             }
+        } catch (e: Exception) {
+            println("⚠️ Error validating word '$word' online: ${e.message}")
+            throw e // Re-throw to be caught by caller
         }
-        
-        return result
     }
 
     /**
@@ -364,7 +411,7 @@ class WordSquareApiClient(private val settings: Settings) {
      */
     suspend fun updateWordsDataFromServer(): Boolean {
         return try {
-            val newData = client.get("$baseUrl/get-words").body<WordsData>()
+            val newData = httpClient.get("$baseUrl/get-words").body<WordsData>()
             wordsData = newData
             settings.putString("words_data", Json.encodeToString(newData))
             println("🔄 Updated word lists from server")
@@ -373,15 +420,6 @@ class WordSquareApiClient(private val settings: Settings) {
             println("⚠️  Failed to update word lists: ${e.message}")
             false
         }
-    }
-    
-    /**
-     * Comprehensive word validation using only the offline dictionary.
-     */
-    suspend fun isValidWord(word: String): Boolean {
-        val result = isValidWordOffline(word)
-        println("🔍 Offline validation for '$word': $result")
-        return result
     }
     
     /**
@@ -405,6 +443,6 @@ class WordSquareApiClient(private val settings: Settings) {
     }
     
     fun close() {
-        client.close()
+        httpClient.close()
     }
 } 

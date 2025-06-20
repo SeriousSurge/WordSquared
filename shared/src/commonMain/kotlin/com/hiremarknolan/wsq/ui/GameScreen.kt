@@ -8,13 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.key.utf16CodePoint
+import androidx.compose.ui.input.key.*
 import kotlinx.coroutines.*
 import androidx.compose.runtime.DisposableEffect
 import com.hiremarknolan.wsq.PlatformSettings
@@ -244,6 +238,7 @@ fun GameScreen(platformSettings: PlatformSettings) {
     if (showInvalidWordsModal && gameBoard.invalidWords.isNotEmpty()) {
         InvalidWordsModal(
             invalidWords = gameBoard.invalidWords,
+            hasNetworkError = gameBoard.hasNetworkError,
             onDismiss = { 
                 showInvalidWordsModal = false
                 gameBoard.clearValidationErrors()
