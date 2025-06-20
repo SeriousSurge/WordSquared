@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Black
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -114,10 +116,10 @@ fun GameHeader(
                 onClick = onShowHistory,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp),
+                    .padding(horizontal = 8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF5F5DC), // Beige to match theme
-                    contentColor = Color(0xFF4169E1) // Blue text/icon
+                    containerColor = White, // Beige to match theme
+                    contentColor = Black
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -129,11 +131,6 @@ fun GameHeader(
                         imageVector = Icons.Default.History,
                         contentDescription = "View history",
                         modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = "History",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
                     )
                 }
             }

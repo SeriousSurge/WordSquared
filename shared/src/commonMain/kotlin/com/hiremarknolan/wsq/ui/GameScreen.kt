@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -217,16 +218,16 @@ fun GameScreen(platformSettings: PlatformSettings) {
             modifier = Modifier.align(Alignment.TopStart)
         )
         
-//        // Debug info overlay (temporary for testing mobile detection)
-//        DebugInfo(
-//            platformSettings = platformSettings,
-//            shouldShowKeyboard = shouldShowVirtualKeyboard,
-//            isVisible = platformSettings.isWebPlatform, // Only show on web for testing
-//            onForceKeyboard = { forceShowKeyboard = it },
-//            modifier = Modifier
-//                .align(Alignment.TopEnd)
-//                .padding(16.dp)
-//        )
+        // Debug info overlay (temporary for testing mobile detection)
+        DebugInfo(
+            platformSettings = platformSettings,
+            shouldShowKeyboard = shouldShowVirtualKeyboard,
+            isVisible = false, // use to debug platforms
+            onForceKeyboard = { forceShowKeyboard = it },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        )
     }
     
     // Modals and overlays

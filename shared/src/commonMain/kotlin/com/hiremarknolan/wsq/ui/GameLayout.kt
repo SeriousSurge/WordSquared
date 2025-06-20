@@ -29,7 +29,7 @@ fun PortraitGameLayout(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Header
+        // Header - fixed height
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -44,15 +44,22 @@ fun PortraitGameLayout(
             )
         }
 
-        // Game board
+        // Game board - takes available space but accounts for keyboard
         BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center
         ) {
-            val gridSize = minOf(maxWidth, maxHeight)
+            // Calculate available space, accounting for keyboard height on mobile
+            val keyboardHeight = if (forceShowKeyboard && platformSettings.isMobile) 200.dp else 0.dp
+            val availableHeight = maxHeight - keyboardHeight
+            
+            // Use smaller dimension but ensure it doesn't overflow
+            val maxSize = minOf(maxWidth * 0.9f, availableHeight * 0.9f)
+            val gridSize = maxSize.coerceAtLeast(250.dp).coerceAtMost(500.dp)
+            
             if (gameBoard.isLoading) {
                 LoadingGameBoard(
                     gridSize = gridSize,
@@ -69,7 +76,7 @@ fun PortraitGameLayout(
             }
         }
 
-        // Virtual Keyboard or Submit Button
+        // Virtual Keyboard or Submit Button - fixed height
         GameInputSection(
             gameBoard = gameBoard,
             platformSettings = platformSettings,
