@@ -14,6 +14,11 @@ import com.russhwolf.settings.Settings
 import com.hiremarknolan.wsq.data.WordLists
 
 /**
+ * Exception thrown when word validation fails due to network issues
+ */
+class NetworkValidationException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+/**
  * Data model for Datamuse API responses
  */
 @Serializable
@@ -88,6 +93,10 @@ class WordSquareApiClient(private val settings: Settings) {
     init {
         // Pre-load cached puzzles from persistent storage into memory on startup
         loadCachedPuzzlesIntoMemory()
+        
+        if (isNetworkErrorSimulationEnabled()) {
+            println("🚨 DEBUG MODE: Network errors will be simulated for testing")
+        }
     }
 
     /**
@@ -340,27 +349,27 @@ class WordSquareApiClient(private val settings: Settings) {
      * Primary validation method - checks local lists first, then API fallback
      */
     suspend fun isValidWord(word: String): Boolean {
-        return try {
-            // First, check our local word lists
-            val localResult = isValidWordOffline(word)
-            if (localResult) {
-                println("✅ Word '$word' found in local dictionary")
-                return true
-            }
-            
-            // If not found locally, try API validation
-            println("🌐 Word '$word' not in local dictionary, checking API...")
+        // First, check our local word lists
+        val localResult = isValidWordOffline(word)
+        if (localResult) {
+            println("✅ Word '$word' found in local dictionary")
+            return true
+        }
+        
+        // If not found locally, try API validation
+        println("🌐 Word '$word' not in local dictionary, checking API...")
+        try {
             val apiResult = isValidWordOnline(word)
             if (apiResult) {
                 println("✅ Word '$word' validated via API")
             } else {
                 println("❌ Word '$word' not found in API either")
             }
-            apiResult
+            return apiResult
         } catch (e: Exception) {
             println("⚠️ API validation failed for '$word': ${e.message}")
-            // If API fails, return false - word not in local list and can't verify online
-            false
+            // Throw specific network exception so validation service can detect it
+            throw NetworkValidationException("Network error validating word '$word'", e)
         }
     }
 
@@ -384,6 +393,12 @@ class WordSquareApiClient(private val settings: Settings) {
      */
     private suspend fun isValidWordOnline(word: String): Boolean {
         return try {
+            // Simulate network error in debug mode
+            if (isNetworkErrorSimulationEnabled()) {
+                println("🚨 DEBUG: Simulating network error for word '$word'")
+                throw Exception("Simulated network error for testing")
+            }
+            
             val cleanWord = word.lowercase().trim()
             
             // Use Datamuse API to check if word exists
@@ -440,6 +455,21 @@ class WordSquareApiClient(private val settings: Settings) {
         }
         
         return "📊 Cache Stats: Memory=$memoryCount, Persistent=$persistentCount"
+    }
+    
+    /**
+     * Enable/disable network error simulation for testing
+     */
+    fun setNetworkErrorSimulation(enabled: Boolean) {
+        settings.putBoolean("debug_simulate_network_error", enabled)
+        println("🚨 Network error simulation ${if (enabled) "ENABLED" else "DISABLED"}")
+    }
+    
+    /**
+     * Check if network error simulation is enabled
+     */
+    fun isNetworkErrorSimulationEnabled(): Boolean {
+        return settings.getBoolean("debug_simulate_network_error", false)
     }
     
     fun close() {

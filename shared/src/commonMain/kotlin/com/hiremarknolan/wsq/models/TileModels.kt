@@ -96,7 +96,8 @@ data class ValidationResult(
     val isValid: Boolean,
     val errorMessage: String? = null,
     val correctCells: Int = 0,
-    val invalidWords: List<InvalidWord> = emptyList()
+    val invalidWords: List<InvalidWord> = emptyList(),
+    val hasNetworkError: Boolean = false
 )
 
 /**

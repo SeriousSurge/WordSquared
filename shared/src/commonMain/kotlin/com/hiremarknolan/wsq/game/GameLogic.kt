@@ -45,13 +45,11 @@ class GameLogic(
             val validationResult = validationService.validateWordSquare(borderWords)
             if (!validationResult.isValid) {
                 if (validationResult.invalidWords.isNotEmpty()) {
-                    // Show invalid words modal
-                    val hasNetworkError = validationResult.errorMessage?.contains("connection") == true ||
-                                        validationResult.errorMessage?.contains("online") == true
-                    gameState.setInvalidWords(validationResult.invalidWords, hasNetworkError)
-                    println("❌ Word validation failed: ${validationResult.invalidWords.size} invalid words")
+                    // Show invalid words modal with network error context
+                    gameState.setInvalidWords(validationResult.invalidWords, validationResult.hasNetworkError)
+                    println("❌ Word validation failed: ${validationResult.invalidWords.size} invalid words (Network error: ${validationResult.hasNetworkError})")
                 } else {
-                    // Show general error message (e.g., network error)
+                    // Show general error message (e.g., pure network error with no invalid words)
                     gameState.setError(validationResult.errorMessage)
                     println("❌ Validation error: ${validationResult.errorMessage}")
                 }

@@ -209,10 +209,41 @@ fun InvalidWordsModal(
                     color = Color.Red
                 )
                 
-                // Description based on error type
+                // Optional network error badge
+                if (hasNetworkError) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Color(0xFFFF9800), 
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "⚠️",
+                                fontSize = 16.sp,
+                                modifier = Modifier.padding(end = 6.dp)
+                            )
+                            Text(
+                                text = "Unable to verify online - using local dictionary only",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+                
+                // Main description
                 Text(
                     text = if (hasNetworkError) {
-                        "Some words are not in our local dictionary and we couldn't verify them online. Please check your internet connection and try again."
+                        "The following words are not in our local dictionary:"
                     } else {
                         "The following words are not accepted. Please check your spelling:"
                     },
@@ -222,51 +253,60 @@ fun InvalidWordsModal(
                 )
                 
                 // List of invalid words
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 200.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(invalidWords) { invalidWord ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.Red.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "\"${invalidWord.word.uppercase()}\"",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Red
-                            )
-                            Text(
-                                text = "(${invalidWord.position})",
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
+                if (invalidWords.isNotEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 200.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(invalidWords) { invalidWord ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color.Red.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "\"${invalidWord.word.uppercase()}\"",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Red
+                                )
+                                Text(
+                                    text = "(${invalidWord.position})",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
+                            }
                         }
                     }
                 }
                 
-                // Additional help text
-                if (hasNetworkError) {
-                    Text(
-                        text = "💡 Tip: Words in our local dictionary will work even offline!",
-                        fontSize = 12.sp,
-                        color = Color.Blue,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
+                // Simple tip
+                Text(
+                    text = if (hasNetworkError) {
+                        "💡 Connect to internet for full word validation"
+                    } else {
+                        "💡 Try using synonyms or check spelling"
+                    },
+                    fontSize = 12.sp,
+                    color = Color.Blue,
+                    textAlign = TextAlign.Center
+                )
                 
                 // OK button
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4169E1)
+                    )
                 ) {
-                    Text("OK")
+                    Text(
+                        text = "Try Again",
+                        color = Color.White
+                    )
                 }
             }
         }

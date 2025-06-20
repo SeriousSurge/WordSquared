@@ -4,6 +4,7 @@ import com.hiremarknolan.wsq.models.ValidationResult
 import com.hiremarknolan.wsq.models.InvalidWord
 import com.hiremarknolan.wsq.models.WordSquareBorder
 import com.hiremarknolan.wsq.network.WordSquareApiClient
+import com.hiremarknolan.wsq.network.NetworkValidationException
 
 /**
  * Service responsible for validating word square submissions
@@ -26,6 +27,7 @@ class WordValidationService(private val apiClient: WordSquareApiClient) {
         val invalidWords = mutableListOf<InvalidWord>()
         var correctCells = 0
         var hasNetworkError = false
+        var networkErrorCount = 0
         
         for ((position, word) in wordsToValidate) {
             if (word.isNotBlank()) {
@@ -35,48 +37,52 @@ class WordValidationService(private val apiClient: WordSquareApiClient) {
                         correctCells += word.length
                         println("✅ '$word' ($position) is valid")
                     } else {
-                        // Check if word was found locally but rejected by API
-                        val isLocallyValid = apiClient.isValidWordOffline(word)
-                        if (isLocallyValid) {
-                            println("⚠️ '$word' ($position) found locally but rejected by API")
-                        } else {
-                            println("❌ '$word' ($position) not found in local dictionary or API")
-                        }
+                        // Word not found in local dictionary or API
+                        println("❌ '$word' ($position) not found in local dictionary or API")
                         invalidWords.add(InvalidWord(word, position))
                     }
-                } catch (e: Exception) {
+                } catch (e: NetworkValidationException) {
                     println("🌐 Network error validating '$word' ($position): ${e.message}")
                     hasNetworkError = true
+                    networkErrorCount++
                     
-                    // Check if word exists locally as fallback
-                    val isLocallyValid = apiClient.isValidWordOffline(word)
-                    if (!isLocallyValid) {
-                        invalidWords.add(InvalidWord(word, position))
-                    } else {
-                        // Word is valid locally, count it as correct despite network error
-                        correctCells += word.length
-                        println("✅ '$word' ($position) valid locally (network unavailable)")
-                    }
+                    // Word not in local dictionary and couldn't verify online
+                    invalidWords.add(InvalidWord(word, position))
+                    println("❌ '$word' ($position) not found locally, added to invalid list due to network error")
+                } catch (e: Exception) {
+                    println("⚠️ Unexpected error validating '$word' ($position): ${e.message}")
+                    // Treat other exceptions as general validation failures
+                    invalidWords.add(InvalidWord(word, position))
                 }
             }
         }
         
         val isValid = invalidWords.isEmpty()
         val errorMessage = when {
-            invalidWords.isNotEmpty() && hasNetworkError -> {
-                "Some words are not in our dictionary and we couldn't verify them online. Please check your connection."
+            hasNetworkError && networkErrorCount > 0 && invalidWords.isNotEmpty() -> {
+                "Unable to connect to the internet for word validation. ${invalidWords.size} word(s) not found in local dictionary."
+            }
+            hasNetworkError && networkErrorCount > 0 && invalidWords.isEmpty() -> {
+                "Network connection unavailable, but all words were validated using local dictionary."
             }
             invalidWords.isNotEmpty() -> {
-                "Some words are not valid. Please check your spelling."
+                "${invalidWords.size} word(s) are not valid. Please check your spelling."
             }
             else -> null
         }
+        
+        println("🔍 Validation complete: ${if (isValid) "VALID" else "INVALID"}")
+        println("   - Network errors: $networkErrorCount")
+        println("   - Invalid words: ${invalidWords.size}")
+        println("   - Has network error flag: $hasNetworkError")
+        println("   - Error message: $errorMessage")
         
         return ValidationResult(
             isValid = isValid,
             errorMessage = errorMessage,
             correctCells = correctCells,
-            invalidWords = invalidWords
+            invalidWords = invalidWords,
+            hasNetworkError = hasNetworkError
         )
     }
     
