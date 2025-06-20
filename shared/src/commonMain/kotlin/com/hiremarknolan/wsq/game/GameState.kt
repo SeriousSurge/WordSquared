@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.hiremarknolan.wsq.models.Difficulty
 import com.hiremarknolan.wsq.models.GameConfiguration
+import com.hiremarknolan.wsq.models.InvalidWord
 import com.hiremarknolan.wsq.network.CloudWordSquareTargets
 import kotlinx.datetime.Clock
 
@@ -38,6 +39,9 @@ class GameState(initialGridSize: Int = 4) {
     var errorMessage by mutableStateOf<String?>(null)
         internal set
     
+    var invalidWords: List<InvalidWord> by mutableStateOf(emptyList())
+        internal set
+    
     var previousGuesses: List<String> by mutableStateOf(emptyList())
         internal set
     
@@ -64,6 +68,21 @@ class GameState(initialGridSize: Int = 4) {
     
     fun setError(message: String?) {
         errorMessage = message
+        // Clear invalid words when setting a general error
+        if (message != null) {
+            invalidWords = emptyList()
+        }
+    }
+    
+    fun setInvalidWords(words: List<InvalidWord>) {
+        invalidWords = words
+        // Clear general error message when setting invalid words
+        errorMessage = null
+    }
+    
+    fun clearValidationErrors() {
+        errorMessage = null
+        invalidWords = emptyList()
     }
     
     fun setPuzzleDate(date: String) {
@@ -95,6 +114,7 @@ class GameState(initialGridSize: Int = 4) {
         guessCount = 0
         score = 0
         errorMessage = null
+        invalidWords = emptyList()
         previousGuesses = emptyList()
         completionTime = 0L
         startTime = Clock.System.now().toEpochMilliseconds()
@@ -107,6 +127,7 @@ class GameState(initialGridSize: Int = 4) {
         guessCount = 0
         score = 0
         errorMessage = null
+        invalidWords = emptyList()
         previousGuesses = emptyList()
         completionTime = 0L
         // Don't reset startTime - preserve timing across difficulty changes

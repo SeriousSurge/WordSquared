@@ -2,6 +2,7 @@ package com.hiremarknolan.wsq.game
 
 import com.hiremarknolan.wsq.models.Difficulty
 import com.hiremarknolan.wsq.models.GameConfiguration
+import com.hiremarknolan.wsq.models.InvalidWord
 import com.hiremarknolan.wsq.models.Tile
 import com.hiremarknolan.wsq.network.CloudWordSquare
 import com.hiremarknolan.wsq.network.WordSquareApiClient
@@ -38,6 +39,7 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
     val isGameWon: Boolean get() = gameState.isGameWon
     val guessCount: Int get() = gameState.guessCount
     val errorMessage: String? get() = gameState.errorMessage
+    val invalidWords: List<InvalidWord> get() = gameState.invalidWords
     val previousGuesses: List<String> get() = gameState.previousGuesses
     val isLoading: Boolean get() = gameState.isLoading
     val currentPuzzleDate: String get() = gameState.currentPuzzleDate
@@ -175,6 +177,8 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
     fun enterLetter(letter: Char) = gameLogic.enterLetter(letter)
 
     fun deleteLetter() = gameLogic.deleteLetter()
+
+    fun clearValidationErrors() = gameLogic.clearSelection()
 
     fun newGame() {
         gameState.resetForNewGame()

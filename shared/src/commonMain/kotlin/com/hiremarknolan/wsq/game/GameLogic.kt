@@ -44,8 +44,15 @@ class GameLogic(
             println("🔍 Starting word validation...")
             val validationResult = validationService.validateWordSquare(borderWords)
             if (!validationResult.isValid) {
-                gameState.setError(validationResult.errorMessage)
-                println("❌ Word validation failed: ${validationResult.errorMessage}")
+                if (validationResult.invalidWords.isNotEmpty()) {
+                    // Show invalid words modal
+                    gameState.setInvalidWords(validationResult.invalidWords)
+                    println("❌ Word validation failed: ${validationResult.invalidWords.size} invalid words")
+                } else {
+                    // Show general error message (e.g., network error)
+                    gameState.setError(validationResult.errorMessage)
+                    println("❌ Word validation failed: ${validationResult.errorMessage}")
+                }
                 return
             }
             println("✅ All words validated successfully!")
@@ -90,7 +97,7 @@ class GameLogic(
         saveGameProgress()
         
         // Clear any error messages
-        gameState.setError(null)
+        gameState.clearValidationErrors()
     }
     
     private fun formatGuessForHistory(borderWords: WordSquareBorder): String {
@@ -136,7 +143,7 @@ class GameLogic(
     
     fun clearSelection() {
         gameState.selectedPosition = null
-        gameState.setError(null)
+        gameState.clearValidationErrors()
     }
     
     fun enterLetter(letter: Char) {

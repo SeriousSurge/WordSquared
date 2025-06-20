@@ -95,5 +95,14 @@ data class GameScore(
 data class ValidationResult(
     val isValid: Boolean,
     val errorMessage: String? = null,
-    val correctCells: Int = 0
+    val correctCells: Int = 0,
+    val invalidWords: List<InvalidWord> = emptyList()
+)
+
+/**
+ * Represents an invalid word with its position
+ */
+data class InvalidWord(
+    val word: String,
+    val position: String // "top", "left", "right", "bottom"
 ) 

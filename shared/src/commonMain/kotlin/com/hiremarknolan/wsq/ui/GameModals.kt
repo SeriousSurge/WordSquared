@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hiremarknolan.wsq.game.WordBoard
 import com.hiremarknolan.wsq.models.Difficulty
+import com.hiremarknolan.wsq.models.InvalidWord
 
 @Composable
 fun VictoryModal(
@@ -171,6 +172,105 @@ private fun VictoryDailyStatus(
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+@Composable
+fun InvalidWordsModal(
+    invalidWords: List<InvalidWord>,
+    onDismiss: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.8f))
+            .clickable { onDismiss() },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .background(Color.White, RoundedCornerShape(16.dp))
+                .clickable { /* consume clicks */ }
+                .padding(24.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "❌ Invalid Words",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Red,
+                    textAlign = TextAlign.Center
+                )
+                
+                Text(
+                    text = "The following words are not accepted:",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+                
+                // List of invalid words
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    invalidWords.forEach { invalidWord ->
+                        InvalidWordItem(
+                            word = invalidWord.word,
+                            position = invalidWord.position
+                        )
+                    }
+                }
+                
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4169E1)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Try Again", color = Color.White, fontSize = 16.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InvalidWordItem(
+    word: String,
+    position: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFFFF5F5), RoundedCornerShape(8.dp))
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column {
+            Text(
+                text = word.uppercase(),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Red
+            )
+            Text(
+                text = "${position.replaceFirstChar { it.uppercase() }} word",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+        }
+        Text(
+            text = "✗",
+            fontSize = 20.sp,
+            color = Color.Red,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

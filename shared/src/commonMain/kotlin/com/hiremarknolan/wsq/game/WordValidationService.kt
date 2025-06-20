@@ -1,6 +1,7 @@
 package com.hiremarknolan.wsq.game
 
 import com.hiremarknolan.wsq.models.ValidationResult
+import com.hiremarknolan.wsq.models.InvalidWord
 import com.hiremarknolan.wsq.models.WordSquareBorder
 import com.hiremarknolan.wsq.network.WordSquareApiClient
 
@@ -22,26 +23,38 @@ class WordValidationService(private val apiClient: WordSquareApiClient) {
             "bottom" to border.bottom
         )
 
+        val invalidWords = mutableListOf<InvalidWord>()
+        var hasNetworkError = false
+
         for ((position, word) in wordsToValidate) {
             println("Validating $position word: $word")
             try {
                 if (!apiClient.isValidWord(word)) {
-                    return ValidationResult(
-                        isValid = false,
-                        errorMessage = "'$word' is not a valid word"
-                    )
+                    invalidWords.add(InvalidWord(word, position))
+                    println("❌ Invalid word found: $word ($position)")
                 }
             } catch (e: Exception) {
                 println("Word validation error: ${e.message}")
-                return ValidationResult(
-                    isValid = false,
-                    errorMessage = "Network error while checking words"
-                )
+                hasNetworkError = true
+                break // Stop on network error
             }
         }
 
-        println("All words validated successfully")
-        return ValidationResult(isValid = true)
+        return when {
+            hasNetworkError -> ValidationResult(
+                isValid = false,
+                errorMessage = "Network error while checking words"
+            )
+            invalidWords.isNotEmpty() -> ValidationResult(
+                isValid = false,
+                errorMessage = "Some words are not valid",
+                invalidWords = invalidWords
+            )
+            else -> {
+                println("✅ All words validated successfully")
+                ValidationResult(isValid = true)
+            }
+        }
     }
     
     /**

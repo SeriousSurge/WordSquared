@@ -44,6 +44,7 @@ fun GameScreen(platformSettings: PlatformSettings) {
     var showGuessesModal by remember { mutableStateOf(false) }
     var showHamburgerMenu by remember { mutableStateOf(false) }
     var showVictoryModal by remember { mutableStateOf(false) }
+    var showInvalidWordsModal by remember { mutableStateOf(false) }
     var forceShowKeyboard by remember { mutableStateOf(false) }
     
     val coroutineScope = rememberCoroutineScope()
@@ -135,6 +136,13 @@ fun GameScreen(platformSettings: PlatformSettings) {
     LaunchedEffect(gameBoard.isGameWon) {
         if (gameBoard.isGameWon) {
             showVictoryModal = true
+        }
+    }
+
+    // Invalid words modal trigger
+    LaunchedEffect(gameBoard.invalidWords.size) {
+        if (gameBoard.invalidWords.isNotEmpty()) {
+            showInvalidWordsModal = true
         }
     }
 
@@ -230,6 +238,17 @@ fun GameScreen(platformSettings: PlatformSettings) {
     // Modals and overlays
     if (showTutorial) {
         TutorialDialog(onDismiss = { showTutorial = false })
+    }
+    
+    // Invalid words modal
+    if (showInvalidWordsModal && gameBoard.invalidWords.isNotEmpty()) {
+        InvalidWordsModal(
+            invalidWords = gameBoard.invalidWords,
+            onDismiss = { 
+                showInvalidWordsModal = false
+                gameBoard.clearValidationErrors()
+            }
+        )
     }
     
     // Only show previous guesses modal in portrait mode
