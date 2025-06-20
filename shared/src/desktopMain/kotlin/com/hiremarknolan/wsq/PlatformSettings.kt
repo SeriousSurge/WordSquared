@@ -1,0 +1,23 @@
+package com.hiremarknolan.wsq
+
+import com.russhwolf.settings.Settings
+import com.russhwolf.settings.PreferencesSettings
+import java.util.prefs.Preferences
+
+actual class PlatformSettings {
+    actual fun createSettings(): Settings {
+        val preferences = Preferences.userNodeForPackage(PlatformSettings::class.java)
+        return PreferencesSettings(preferences)
+    }
+
+    actual val screenHeight: Int = 800
+
+    actual val screenWidth: Int = 1200
+
+    actual val isMobile = false
+    
+    // Never show virtual keyboard on desktop - users have physical keyboards
+    actual val shouldShowVirtualKeyboard = false
+    
+    actual val isWebPlatform = false
+} 

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Squared</title>
+    <script src="skiko.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        #ComposeTarget {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        /* Loading Animation Styles */
+        .loading-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        .loading-container.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: white;
+            font-size: 18px;
+            margin-top: 20px;
+            font-weight: 500;
+        }
+        
+        .game-title {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Animation -->
+    <div id="loading-container" class="loading-container">
+        <div class="game-title">WORD SQUARED</div>
+        <div class="spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+    
+    <canvas id="ComposeTarget"></canvas>
+    
+    <script>
+        // Hide loading animation once the WASM app is ready
+        window.addEventListener('load', function() {
+            // Add a small delay to ensure everything is properly loaded
+            setTimeout(function() {
+                const loadingContainer = document.getElementById('loading-container');
+                loadingContainer.classList.add('hidden');
+                
+                // Remove the loading container from DOM after transition
+                setTimeout(function() {
+                    loadingContainer.remove();
+                }, 500);
+            }, 1000);
+        });
+        
+        // Fallback: Hide loading after a maximum time (10 seconds)
+        setTimeout(function() {
+            const loadingContainer = document.getElementById('loading-container');
+            if (loadingContainer) {
+                loadingContainer.classList.add('hidden');
+                setTimeout(function() {
+                    loadingContainer.remove();
+                }, 500);
+            }
+        }, 10000);
+    </script>
+    
+    <script src="wasmApp.js"></script>
+</body>
+</html> 
