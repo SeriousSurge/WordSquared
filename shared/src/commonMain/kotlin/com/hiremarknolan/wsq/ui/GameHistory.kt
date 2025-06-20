@@ -37,7 +37,6 @@ fun PreviousGuessesModal(
                 .width(300.dp)
                 .height(400.dp)
                 .background(Color.White, RoundedCornerShape(16.dp))
-                .clickable { /* consume clicks */ }
                 .padding(16.dp)
         ) {
             Column(
@@ -67,8 +66,7 @@ fun PreviousGuessesModal(
 fun PreviousGuessesPanel(gameBoard: WordBoard) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(12.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
