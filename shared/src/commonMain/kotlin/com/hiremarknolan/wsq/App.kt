@@ -11,9 +11,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.hiremarknolan.wsq.ui.GameScreen
+import com.hiremarknolan.wsq.di.initKoin
+import com.hiremarknolan.wsq.ui.GameScreenMvi
 
 // CompositionLocal for modal system
 val LocalModalHost = compositionLocalOf<ModalHost> { error("No ModalHost provided") }
@@ -26,6 +28,25 @@ interface ModalHost {
 
 @Composable
 fun App(platformSettings: PlatformSettings) {
+    var isKoinInitialized by remember { mutableStateOf(false) }
+    
+    // Initialize Koin synchronously on first composition
+    LaunchedEffect(Unit) {
+        try {
+            initKoin(platformSettings)
+            isKoinInitialized = true
+        } catch (e: Exception) {
+            // Koin might already be started, which is fine
+            println("Koin initialization: ${e.message}")
+            isKoinInitialized = true
+        }
+    }
+    
+    // Don't render content until Koin is initialized
+    if (!isKoinInitialized) {
+        return
+    }
+    
     MaterialTheme {
         var modalContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
         var modalDismissCallback by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -58,7 +79,7 @@ fun App(platformSettings: PlatformSettings) {
                                 .union(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal))
                         )
                 ) {
-                    GameScreen(platformSettings)
+                    GameScreenMvi()
                 }
                 
                 // Modal overlay at root level - renders behind system bars
