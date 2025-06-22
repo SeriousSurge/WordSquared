@@ -1,6 +1,4 @@
 package com.hiremarknolan.wsq.presentation.game
-
-import androidx.lifecycle.viewModelScope
 import com.hiremarknolan.wsq.domain.repository.GameStateData
 import com.hiremarknolan.wsq.domain.repository.PuzzleTargetsData
 import com.hiremarknolan.wsq.domain.repository.TileData
@@ -35,10 +33,12 @@ class GameViewModel(
     private var startTime: Long = 0L
 
     init {
-        initializeGame()
+        viewModelScope.launch {
+            initializeGame()
+        }
     }
 
-    override fun handleIntent(intent: GameContract.Intent) {
+    override suspend fun handleIntent(intent: GameContract.Intent) {
         when (intent) {
             is GameContract.Intent.LoadGame -> { /* Game loads automatically in init */ }
             is GameContract.Intent.SubmitWord -> submitWord()
@@ -63,68 +63,62 @@ class GameViewModel(
         }
     }
 
-    private fun initializeGame() {
-        viewModelScope.launch {
-            try {
-                val initialDifficulty = getInitialDifficultyUseCase()
-                updateState { 
-                    copy(
-                        difficulty = initialDifficulty,
-                        currentGridSize = initialDifficulty.gridSize,
-                        isLoading = true
-                    )
-                }
-                
-                // Create WordBoard with the initial difficulty
-                gameBoard = WordBoard(settings, initialDifficulty.gridSize)
-                
-                // Initial state sync
-                syncGameBoardState()
-                
-            } catch (e: Exception) {
-                updateState { 
-                    copy(
-                        errorMessage = "Failed to initialize game: ${e.message}",
-                        isLoading = false
-                    )
-                }
+    private suspend fun initializeGame() {
+        try {
+            val initialDifficulty = getInitialDifficultyUseCase()
+            updateState { 
+                copy(
+                    difficulty = initialDifficulty,
+                    currentGridSize = initialDifficulty.gridSize,
+                    isLoading = true
+                )
             }
-        }
-    }
-
-
-
-    private fun submitWord() {
-        viewModelScope.launch {
-            try {
-                gameBoard?.submitWord()
-                syncGameBoardState()
-                
-                // Check if game was completed
-                gameBoard?.let { board ->
-                    if (board.isGameWon) {
-                        sendEffect(GameContract.Effect.GameCompleted)
-                        updateState { copy(showVictoryModal = true) }
-                    } else if (board.invalidWords.isNotEmpty()) {
-                        updateState { copy(showInvalidWordsModal = true) }
-                    }
-                }
-            } catch (e: Exception) {
-                updateState { 
-                    copy(
-                        errorMessage = "Submission failed: ${e.message}",
-                        isLoading = false
-                    )
-                }
-            }
-        }
-    }
-
-    private fun resetGame() {
-        viewModelScope.launch {
-            gameBoard?.newGame()
+            
+            // Create WordBoard with the initial difficulty
+            gameBoard = WordBoard(settings, initialDifficulty.gridSize)
+            
+            // Initial state sync
             syncGameBoardState()
+            
+        } catch (e: Exception) {
+            updateState { 
+                copy(
+                    errorMessage = "Failed to initialize game: ${e.message}",
+                    isLoading = false
+                )
+            }
         }
+    }
+
+
+
+    private suspend fun submitWord() {
+        try {
+            gameBoard?.submitWord()
+            syncGameBoardState()
+            
+            // Check if game was completed
+            gameBoard?.let { board ->
+                if (board.isGameWon) {
+                    sendEffect(GameContract.Effect.GameCompleted)
+                    updateState { copy(showVictoryModal = true) }
+                } else if (board.invalidWords.isNotEmpty()) {
+                    updateState { copy(showInvalidWordsModal = true) }
+                }
+            }
+        } catch (e: Exception) {
+            updateState { 
+                copy(
+                    errorMessage = "Submission failed: ${e.message}",
+                    isLoading = false
+                )
+            }
+        }
+    }
+
+    private suspend fun resetGame() {
+        gameBoard?.newGame()
+        syncGameBoardState()
     }
 
     private fun syncGameBoardState() {
@@ -151,48 +145,46 @@ class GameViewModel(
         }
     }
 
-    private fun changeDifficulty(newDifficulty: Difficulty) {
-        viewModelScope.launch {
-            updateState { 
-                copy(
-                    difficulty = newDifficulty,
-                    currentGridSize = newDifficulty.gridSize,
-                    isLoading = true
-                )
-            }
-            
-            difficultyPreferencesUseCase.setLastUsedDifficulty(newDifficulty)
-            gameBoard?.changeDifficulty(newDifficulty)
-            
-            // Sync state after difficulty change
-            syncGameBoardState()
+    private suspend fun changeDifficulty(newDifficulty: Difficulty) {
+        updateState { 
+            copy(
+                difficulty = newDifficulty,
+                currentGridSize = newDifficulty.gridSize,
+                isLoading = true
+            )
         }
+        
+        difficultyPreferencesUseCase.setLastUsedDifficulty(newDifficulty)
+        gameBoard?.changeDifficulty(newDifficulty)
+        
+        // Sync state after difficulty change
+        syncGameBoardState()
     }
 
-    private fun selectPosition(row: Int, col: Int) {
+    private suspend fun selectPosition(row: Int, col: Int) {
         gameBoard?.selectPosition(row, col)
         syncGameBoardState()
         sendEffect(GameContract.Effect.RequestFocus(row, col))
     }
 
-    private fun clearSelection() {
+    private suspend fun clearSelection() {
         gameBoard?.clearSelection()
         syncGameBoardState()
     }
 
-    private fun enterLetter(letter: Char) {
+    private suspend fun enterLetter(letter: Char) {
         gameBoard?.enterLetter(letter)
         syncGameBoardState()
         sendEffect(GameContract.Effect.SaveGameState)
     }
 
-    private fun deleteLetter() {
+    private suspend fun deleteLetter() {
         gameBoard?.deleteLetter()
         syncGameBoardState()
         sendEffect(GameContract.Effect.SaveGameState)
     }
 
-    private fun clearErrors() {
+    private suspend fun clearErrors() {
         updateState { 
             copy(
                 errorMessage = null,

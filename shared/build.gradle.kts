@@ -55,9 +55,6 @@ kotlin {
             
             // Koin DI
             implementation(libs.koin.core)
-            
-            // Lifecycle
-            implementation(libs.lifecycle.viewmodel)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -66,10 +63,12 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.koin.android)
             implementation(libs.koin.compose)
+            implementation(libs.lifecycle.viewmodel)
             implementation(libs.lifecycle.viewmodel.compose)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation(libs.lifecycle.viewmodel)
         }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)
@@ -79,6 +78,7 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(libs.ktor.client.cio)
+                implementation(libs.lifecycle.viewmodel)
             }
         }
     }

@@ -1,10 +1,8 @@
 package com.hiremarknolan.wsq.mvi
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 
 /**
  * Base interface for MVI Intents
@@ -23,15 +21,20 @@ interface MviEffect
 
 /**
  * Abstract base ViewModel for MVI pattern
+ * Uses custom coroutine scope for cross-platform compatibility
  */
 abstract class MviViewModel<Intent : MviIntent, State : MviState, Effect : MviEffect>(
     initialState: State
-) : ViewModel() {
+) {
 
+        // Create a custom scope for cross-platform compatibility
+    private val viewModelJob = SupervisorJob()
+    protected val viewModelScope = CoroutineScope(Dispatchers.Main + viewModelJob)
+    
     // Private mutable state
     private val _state = MutableStateFlow(initialState)
     val state: StateFlow<State> = _state.asStateFlow()
-
+    
     // Private effects channel
     private val _effects = Channel<Effect>(Channel.BUFFERED)
     val effects: Flow<Effect> = _effects.receiveAsFlow()
@@ -64,14 +67,24 @@ abstract class MviViewModel<Intent : MviIntent, State : MviState, Effect : MviEf
     }
 
     /**
-     * Handles intents
+     * Handles intents (suspend function for async operations)
      */
-    abstract fun handleIntent(intent: Intent)
+    protected abstract suspend fun handleIntent(intent: Intent)
 
     /**
      * Processes an intent
      */
     fun processIntent(intent: Intent) {
-        handleIntent(intent)
+        viewModelScope.launch {
+            handleIntent(intent)
+        }
+    }
+    
+    /**
+     * Cleanup resources when done
+     * Call this when the ViewModel is no longer needed
+     */
+    fun dispose() {
+        viewModelJob.cancel()
     }
 } 

@@ -16,6 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.hiremarknolan.wsq.di.initKoin
 import com.hiremarknolan.wsq.ui.GameScreenMvi
+import com.hiremarknolan.wsq.presentation.game.GameViewModel
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 
 // CompositionLocal for modal system
 val LocalModalHost = compositionLocalOf<ModalHost> { error("No ModalHost provided") }
@@ -45,6 +48,11 @@ fun App(platformSettings: PlatformSettings) {
     // Don't render content until Koin is initialized
     if (!isKoinInitialized) {
         return
+    }
+    
+    // Get ViewModel after Koin is initialized
+    val gameViewModel: GameViewModel = remember { 
+        object : KoinComponent {}.get()
     }
     
     MaterialTheme {
@@ -79,7 +87,7 @@ fun App(platformSettings: PlatformSettings) {
                                 .union(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal))
                         )
                 ) {
-                    GameScreenMvi()
+                    GameScreenMvi(viewModel = gameViewModel)
                 }
                 
                 // Modal overlay at root level - renders behind system bars

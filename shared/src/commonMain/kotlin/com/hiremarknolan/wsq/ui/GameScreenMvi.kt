@@ -13,29 +13,20 @@ import com.hiremarknolan.wsq.presentation.game.GameViewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-object GameViewModelFactory : KoinComponent {
-    fun create(): GameViewModel {
-        return try {
-            getKoin().get()
-        } catch (e: Exception) {
-            throw IllegalStateException("Koin not initialized. Make sure initKoin() is called before accessing GameViewModel.", e)
-        }
-    }
-}
-
 /**
  * New MVI-based Game Screen
  */
 @Composable
 fun GameScreenMvi(
     modifier: Modifier = Modifier,
-    viewModel: GameViewModel = remember { GameViewModelFactory.create() }
+    viewModel: GameViewModel? = null
 ) {
-    val state by viewModel.state.collectAsState()
+    val actualViewModel: GameViewModel = viewModel ?: throw IllegalStateException("GameViewModel must be provided")
+    val state by actualViewModel.state.collectAsState()
     
     // Handle effects (one-time events)
     LaunchedEffect(Unit) {
-        viewModel.effects.onEach { effect ->
+        actualViewModel.effects.onEach { effect ->
             when (effect) {
                 is GameContract.Effect.ShowError -> {
                     // Handle error display
@@ -64,7 +55,7 @@ fun GameScreenMvi(
     
     // Start by loading the game
     LaunchedEffect(Unit) {
-        viewModel.processIntent(GameContract.Intent.LoadGame)
+        actualViewModel.processIntent(GameContract.Intent.LoadGame)
     }
     
     Box(
@@ -74,11 +65,11 @@ fun GameScreenMvi(
             state.isLoading -> LoadingContent()
             state.errorMessage != null -> ErrorContent(
                 error = state.errorMessage!!,
-                onRetry = { viewModel.processIntent(GameContract.Intent.LoadGame) }
+                onRetry = { actualViewModel.processIntent(GameContract.Intent.LoadGame) }
             )
             else -> GameContent(
                 state = state,
-                onIntent = viewModel::processIntent
+                onIntent = actualViewModel::processIntent
             )
         }
     }
@@ -155,5 +146,27 @@ private fun GameContent(
             onIntent = onIntent,
             modifier = Modifier.fillMaxWidth()
         )
+    }
+    
+    // Handle modals
+    when {
+        state.showVictoryModal -> {
+            VictoryModalMvi(
+                state = state,
+                onIntent = onIntent
+            )
+        }
+        state.showInvalidWordsModal -> {
+            InvalidWordsModalMvi(
+                invalidWords = state.invalidWords,
+                hasNetworkError = state.hasNetworkError,
+                onIntent = onIntent
+            )
+        }
+        state.showTutorial -> {
+            TutorialModalMvi(
+                onIntent = onIntent
+            )
+        }
     }
 } 
