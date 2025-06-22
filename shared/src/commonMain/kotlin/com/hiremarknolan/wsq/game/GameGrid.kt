@@ -188,10 +188,20 @@ class GameGrid(private val gameState: GameState) {
             val (row, col) = pos
             val tile = tiles[row][col]
             if (tile.state == TileState.EDITABLE && !tile.isCorrect) {
+                val wasEmpty = tile.letter == ' '
+                
+                // Update the letter immediately
                 tile.letter = letter.uppercaseChar()
-                // Move to next editable position
-                val nextPos = findNextEditablePosition(row, col)
-                gameState.selectedPosition = nextPos?.let { it.row to it.col }
+                
+                // Auto-advance behavior:
+                // - If the cell was empty, advance to next empty cell (or stay if no more empty cells)
+                // - If the cell already had a letter, stay in place (allows easy overwriting)
+                if (wasEmpty) {
+                    val nextPos = findNextEditablePosition(row, col)
+                    gameState.selectedPosition = nextPos?.let { it.row to it.col } ?: (row to col)
+                }
+                // If !wasEmpty, keep current position selected for easy overwriting
+                
                 gameState.setError(null)
                 return true
             }
@@ -292,35 +302,37 @@ class GameGrid(private val gameState: GameState) {
         println("Expected solution from targets:")
         println("Top: $topWord, Left: $leftWord, Right: $rightWord, Bottom: $bottomWord")
         
-        // Create new tiles array to trigger UI recomposition
-        val newTiles = Array(n) { row ->
-            Array(n) { col ->
-                val oldTile = tiles[row][col]
-                if (oldTile.state == TileState.EDITABLE) {
+        // Process each editable tile and update in place to ensure UI sees changes
+        var tilesChanged = false
+        for (row in 0 until n) {
+            for (col in 0 until n) {
+                val tile = tiles[row][col]
+                if (tile.state == TileState.EDITABLE) {
                     val expectedLetter = expectedGrid[row][col]
-                    if (oldTile.letter == expectedLetter && expectedLetter != ' ') {
-                        // Create new tile marked as correct
+                    if (tile.letter == expectedLetter && expectedLetter != ' ') {
+                        // Mark as correct
                         correctCells++
-                        println("Cell [$row,$col] correct: ${oldTile.letter} matches expected $expectedLetter")
-                        Tile(row, col, oldTile.letter, TileState.CORRECT, oldTile.previousAttempts)
+                        println("Cell [$row,$col] correct: ${tile.letter} matches expected $expectedLetter")
+                        tile.state = TileState.CORRECT
+                        tilesChanged = true
                     } else {
-                        // Create new tile with cleared letter and updated previous attempts
-                        val newPreviousAttempts = oldTile.previousAttempts.toMutableList()
-                        if (oldTile.letter != ' ' && !newPreviousAttempts.contains(oldTile.letter)) {
-                            newPreviousAttempts.add(oldTile.letter)
+                        // Clear incorrect letter and update previous attempts
+                        if (tile.letter != ' ' && !tile.previousAttempts.contains(tile.letter)) {
+                            tile.previousAttempts.add(tile.letter)
                         }
-                        println("Cell [$row,$col] cleared: was incorrect")
-                        Tile(row, col, ' ', TileState.EDITABLE, newPreviousAttempts)
+                        println("Cell [$row,$col] cleared: '${tile.letter}' was incorrect")
+                        tile.letter = ' '
+                        tilesChanged = true
                     }
-                } else {
-                    // Keep non-editable tiles as-is
-                    oldTile
                 }
             }
         }
         
-        // Replace the tiles array to trigger UI updates
-        tiles = newTiles
+        // If we made changes, ensure UI recomposition by creating a new tiles array reference
+        if (tilesChanged) {
+            tiles = tiles.copyOf()
+            println("🔄 Grid updated with $correctCells correct cells, tiles array refreshed for UI")
+        }
         
         // Move cursor to first available editable cell
         val firstEditablePos = findFirstEditablePosition()
