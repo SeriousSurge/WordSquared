@@ -10,6 +10,7 @@ kotlinx-serialization = "1.8.1"
 kotlinx-coroutines = "1.10.2"
 koin = "4.0.0"
 lifecycle = "2.8.7"
+kermit = "2.0.3"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

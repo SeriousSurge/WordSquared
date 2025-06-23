@@ -117,28 +117,46 @@ Then open `http://localhost:8080` in your browser
 ```
 wsq/
 ├── androidApp/          # Android-specific code
-├── iosApp/             # iOS-specific code  
-├── desktopApp/         # Desktop application
-├── wasmApp/            # Web application
-├── shared/             # Shared Kotlin Multiplatform code
-│   ├── src/commonMain/kotlin/com/hiremarknolan/wsq/
-│   │   ├── App.kt                    # Main app entry point
-│   │   ├── game/                     # Game logic and state
-│   │   │   ├── GameState.kt         # Core game state management
-│   │   │   ├── GameLogic.kt         # Game rules and validation
-│   │   │   ├── WordBoard.kt         # Board management
-│   │   │   └── GamePersistence.kt   # Save/load functionality
-│   │   ├── models/                   # Data models
-│   │   │   ├── GameConfiguration.kt # Game settings
-│   │   │   └── TileModels.kt        # Tile and grid models
-│   │   ├── network/                  # API clients
-│   │   │   └── WordSquareApiClient.kt
-│   │   ├── ui/                       # Compose UI components
-│   │   │   ├── GameScreen.kt        # Main game interface
-│   │   │   ├── GameBoard.kt         # Interactive game board
-│   │   │   ├── VirtualKeyboard.kt   # Mobile keyboard
-│   │   │   └── GameModals.kt        # Dialogs and overlays
-│   │   └── PlatformSettings.kt      # Platform abstractions
+├── iosApp/              # iOS-specific code  
+├── desktopApp/          # Desktop application
+├── wasmApp/             # Web application
+├── shared/              # Shared Kotlin Multiplatform code
+│   └── src/commonMain/kotlin/com/hiremarknolan/wsq/
+│       ├── App.kt                    # Main composable entry point
+│       ├── MainViewController.kt     # Platform-agnostic entry point
+│       ├── PlatformSettings.kt       # Settings provider
+│       ├── di/                       # Dependency injection modules (Koin)
+│       │   ├── AppModule.kt
+│       │   └── KoinInitializer.kt
+│       ├── mvi/                      # MVI core interfaces & base ViewModel
+│       │   └── MviBase.kt
+│       ├── presentation/             # Presentation layer (contract & ViewModel)
+│       │   └── game/
+│       │       ├── GameContract.kt
+│       │       └── GameViewModel.kt
+│       ├── domain/                   # Domain models & use cases
+│       │   ├── models/
+│       │   │   └── GameDomainModels.kt
+│       │   ├── repository/
+│       │   │   └── GameRepository.kt
+│       │   └── usecase/
+│       │       ├── GameUseCases.kt
+│       │       ├── SubmitWordUseCase.kt
+│       │       └── WordValidationDomainService.kt
+│       ├── data/                     # Data layer (repositories & word lists)
+│       │   ├── repository/
+│       │   │   ├── GameRepositoryImpl.kt
+│       │   │   └── GamePersistenceRepositoryImpl.kt
+│       │   └── WordLists.kt          # Embedded word lists
+│       ├── network/                  # API client for puzzles
+│       │   └── WordSquareApiClient.kt
+│       └── ui/                       # Compose UI components (MVI-based)
+│           ├── GameScreenMvi.kt
+│           ├── GameBoardMvi.kt
+│           ├── GameHeaderMvi.kt
+│           ├── PreviousGuessesListMvi.kt
+│           ├── GameModalsMvi.kt
+│           └── VirtualKeyboardMvi.kt
 │   ├── src/androidMain/             # Android-specific implementations
 │   ├── src/iosMain/                 # iOS-specific implementations
 │   ├── src/desktopMain/             # Desktop-specific implementations
