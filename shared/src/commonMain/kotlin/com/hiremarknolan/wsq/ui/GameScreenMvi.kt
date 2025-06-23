@@ -181,7 +181,8 @@ private fun GameContent(
         if (portrait) {
             Column(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Game Header
                 GameHeaderMvi(
@@ -204,12 +205,21 @@ private fun GameContent(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Virtual Keyboard (only on platforms that support it)
+                // Virtual Keyboard or Submit button when keyboard is hidden
                 if (platformSettings.shouldShowVirtualKeyboard) {
                     VirtualKeyboardMvi(
                         onIntent = onIntent,
                         modifier = Modifier.fillMaxWidth()
                     )
+                } else {
+                    Button(
+                        onClick = { onIntent(GameContract.Intent.SubmitWord) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Text("Submit", style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
             }
         } else {
@@ -218,11 +228,14 @@ private fun GameContent(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Left area
                 Column(
                     Modifier.weight(1f)
                 ) {
                     CompactGameHeaderMvi(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                         elapsedTime = state.elapsedTime,
                         guessCount = state.guessCount,
                         difficulty = state.difficulty,
@@ -231,7 +244,7 @@ private fun GameContent(
                         onIntent = onIntent
                     )
 
-                    // Left split keyboard (only on platforms that support it)
+                    // Left split keyboard
                     if (platformSettings.shouldShowVirtualKeyboard) {
                         SplitKeyboardLeftMvi(
                             onIntent = onIntent,
@@ -242,19 +255,38 @@ private fun GameContent(
                     }
                 }
 
-                // Game Board in center
-                GameBoardMvi(
-                    tiles = state.tiles,
-                    selectedPosition = state.selectedPosition,
-                    gridSize = state.currentGridSize,
-                    isGameWon = state.isGameWon,
-                    onIntent = onIntent,
+                // Center area with board and submit
+                Column(
                     modifier = Modifier
                         .weight(2f)
-                        .padding(vertical = 24.dp, horizontal = 16.dp)
-                )
+                        .padding(vertical = 24.dp, horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    GameBoardMvi(
+                        tiles = state.tiles,
+                        selectedPosition = state.selectedPosition,
+                        gridSize = state.currentGridSize,
+                        isGameWon = state.isGameWon,
+                        onIntent = onIntent,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    )
+                    // Submit button when keyboard is hidden
+                    if (!platformSettings.shouldShowVirtualKeyboard) {
+                        Button(
+                            onClick = { onIntent(GameContract.Intent.SubmitWord) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        ) {
+                            Text("Submit", style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
 
-
+                // Right area
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
