@@ -6,14 +6,22 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import com.hiremarknolan.wsq.presentation.game.GameContract
 import com.hiremarknolan.wsq.presentation.game.GameViewModel
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import com.hiremarknolan.wsq.PlatformSettings
+import org.koin.core.component.get
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 
 /**
  * New MVI-based Game Screen
@@ -122,10 +130,34 @@ private fun GameContent(
     state: GameContract.State,
     onIntent: (GameContract.Intent) -> Unit
 ) {
+    // Inject PlatformSettings and setup keyboard focus
+    val platformSettings: PlatformSettings = remember { object : KoinComponent {}.get<PlatformSettings>() }
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .focusRequester(focusRequester)
+            .focusable()
+            .onKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown) {
+                    val key = keyEvent.key
+                    when {
+                        key == Key.Enter -> {
+                            onIntent(GameContract.Intent.SubmitWord)
+                            true
+                        }
+                        key == Key.Backspace -> {
+                            onIntent(GameContract.Intent.DeleteLetter)
+                            true
+                        }
+
+                        else -> false
+                    }
+                } else false
+            }
     ) {
         val portrait = maxWidth < maxHeight
 
@@ -155,11 +187,13 @@ private fun GameContent(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Virtual Keyboard
-                VirtualKeyboardMvi(
-                    onIntent = onIntent,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Virtual Keyboard (only on platforms that support it)
+                if (platformSettings.shouldShowVirtualKeyboard) {
+                    VirtualKeyboardMvi(
+                        onIntent = onIntent,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         } else {
             Row(
@@ -180,13 +214,15 @@ private fun GameContent(
                         onIntent = onIntent
                     )
 
-                    // Left split keyboard
-                    SplitKeyboardLeftMvi(
-                        onIntent = onIntent,
-                        modifier = Modifier
-                            .wrapContentWidth()
-                            .wrapContentHeight()
-                    )
+                    // Left split keyboard (only on platforms that support it)
+                    if (platformSettings.shouldShowVirtualKeyboard) {
+                        SplitKeyboardLeftMvi(
+                            onIntent = onIntent,
+                            modifier = Modifier
+                                .wrapContentWidth()
+                                .wrapContentHeight()
+                        )
+                    }
                 }
 
                 // Game Board in center
@@ -214,13 +250,15 @@ private fun GameContent(
                             .padding(8.dp)
                     )
 
-                    // Right split keyboard
-                    SplitKeyboardRightMvi(
-                        onIntent = onIntent,
-                        modifier = Modifier
-                            .wrapContentWidth()
-                            .wrapContentHeight()
-                    )
+                    // Right split keyboard (only on platforms that support it)
+                    if (platformSettings.shouldShowVirtualKeyboard) {
+                        SplitKeyboardRightMvi(
+                            onIntent = onIntent,
+                            modifier = Modifier
+                                .wrapContentWidth()
+                                .wrapContentHeight()
+                        )
+                    }
                 }
             }
         }

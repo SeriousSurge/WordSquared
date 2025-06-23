@@ -14,6 +14,7 @@ kotlin {
             dependencies {
                 implementation(project(":shared"))
                 implementation(compose.desktop.currentOs)
+                //implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:${libs.versions.kotlinx-coroutines.get()}")
             }
         }
         val desktopTest by getting
