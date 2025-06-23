@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hiremarknolan.wsq.models.Difficulty
 import com.hiremarknolan.wsq.presentation.game.GameContract
-import androidx.compose.ui.platform.LocalConfiguration
 
 @Composable
 fun GameHeaderMvi(
@@ -37,10 +36,10 @@ fun GameHeaderMvi(
         elapsedTime
     }
     
-    // Determine current orientation
-    val configuration = LocalConfiguration.current
-    
-    Box(modifier = modifier.fillMaxWidth()) {
+    // Use BoxWithConstraints to detect orientation
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val portrait = maxWidth < maxHeight
+        
         // Hamburger menu button in top left
         IconButton(
             onClick = { onIntent(GameContract.Intent.ShowHamburgerMenu) },
@@ -130,7 +129,7 @@ fun GameHeaderMvi(
         }
         
         // History button in top right (only show if there are previous guesses and in portrait)
-        if (configuration.screenWidthDp < configuration.screenHeightDp && previousGuesses.isNotEmpty()) {
+        if (portrait && previousGuesses.isNotEmpty()) {
             Button(
                 onClick = { onIntent(GameContract.Intent.ShowGuessesModal) },
                 modifier = Modifier

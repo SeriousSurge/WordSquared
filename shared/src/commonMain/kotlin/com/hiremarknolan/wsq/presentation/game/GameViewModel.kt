@@ -310,6 +310,8 @@ class GameViewModel(
     }
 
     private suspend fun changeDifficulty(newDifficulty: Difficulty) {
+        // Save current game state before switching difficulty
+        saveGameState()
         updateState { 
             copy(
                 difficulty = newDifficulty,
@@ -555,6 +557,8 @@ class GameViewModel(
     }
     
     fun cleanup() {
+        // Save game state when ViewModel is disposed
+        viewModelScope.launch { saveGameState() }
         saveJob?.cancel()
         stopTimer()
     }

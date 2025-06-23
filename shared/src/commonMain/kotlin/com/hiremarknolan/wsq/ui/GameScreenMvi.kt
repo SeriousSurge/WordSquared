@@ -3,6 +3,7 @@ package com.hiremarknolan.wsq.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -71,6 +72,13 @@ fun GameScreenMvi(
                 state = state,
                 onIntent = actualViewModel::processIntent
             )
+        }
+    }
+    
+    // Save game when screen is disposed
+    DisposableEffect(actualViewModel) {
+        onDispose {
+            actualViewModel.cleanup()
         }
     }
 }
