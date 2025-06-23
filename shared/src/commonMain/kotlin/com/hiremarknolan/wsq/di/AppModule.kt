@@ -24,6 +24,7 @@ val appModule = module {
     // Use Cases
     single { LoadTodaysPuzzleUseCase(get(), get()) }
     single { ValidateWordsUseCase(get()) }
+    single { SubmitWordUseCase(get()) }
     single { CalculateScoreUseCase() }
     single { SaveGameStateUseCase(get()) }
     single { LoadGameStateUseCase(get()) }
@@ -33,10 +34,11 @@ val appModule = module {
     single { CompleteGameUseCase(get(), get()) }
     
     // ViewModels - using single instead of viewModel for cross-platform compatibility
-    single { 
+        single {
         GameViewModel(
             loadTodaysPuzzleUseCase = get(),
             validateWordsUseCase = get(),
+            submitWordUseCase = get(),
             calculateScoreUseCase = get(),
             saveGameStateUseCase = get(),
             loadGameStateUseCase = get(),

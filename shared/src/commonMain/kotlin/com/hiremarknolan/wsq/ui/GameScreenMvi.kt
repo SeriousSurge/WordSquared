@@ -168,5 +168,17 @@ private fun GameContent(
                 onIntent = onIntent
             )
         }
+        state.showGuessesModal -> {
+            PreviousGuessesModalMvi(
+                previousGuesses = state.previousGuesses,
+                onIntent = onIntent
+            )
+        }
+        state.showHamburgerMenu -> {
+            HamburgerMenuModalMvi(
+                difficulty = state.difficulty,
+                onIntent = onIntent
+            )
+        }
     }
 } 

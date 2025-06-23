@@ -46,6 +46,14 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
     val isLoading: Boolean get() = gameState.isLoading
     val currentPuzzleDate: String get() = gameState.currentPuzzleDate
     val completionTime: Long get() = gameState.completionTime
+    val targetWords: Map<String, String> get() = gameState.targetWords?.let { targets ->
+        mapOf(
+            "top" to targets.top,
+            "left" to targets.left,
+            "right" to targets.right,
+            "bottom" to targets.bottom
+        )
+    } ?: emptyMap()
 
     init {
         println("🎯🎯🎯 WORDBOARD INIT STARTED 🎯🎯🎯")
@@ -229,8 +237,19 @@ class WordBoard(private val settings: Settings, gridSize: Int = 4, private val e
     }
 
     fun dispose() {
-        scope.cancel()
-        apiClient.close()
+        try {
+            scope.cancel()
+            apiClient.close()
+            
+            // Clear references to help with garbage collection
+            gameState.targetWords = null
+            gameState.previousGuesses = emptyList()
+            gameState.invalidWords = emptyList()
+            
+            println("🧹 WordBoard disposed and cleaned up")
+        } catch (e: Exception) {
+            println("Error during WordBoard disposal: ${e.message}")
+        }
     }
 
     fun getNextDifficulty(): Difficulty? = gameState.getNextDifficulty()

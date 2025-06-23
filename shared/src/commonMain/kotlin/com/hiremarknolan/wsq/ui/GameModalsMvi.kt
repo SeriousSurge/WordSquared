@@ -1,13 +1,9 @@
 package com.hiremarknolan.wsq.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -21,62 +17,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hiremarknolan.wsq.models.InvalidWord
 import com.hiremarknolan.wsq.presentation.game.GameContract
-import com.hiremarknolan.wsq.LocalModalHost
 
 /**
- * MVI-compatible Victory Modal
+ * MVI-compatible Victory Dialog (dismissible)
  */
 @Composable
 fun VictoryModalMvi(
     state: GameContract.State,
     onIntent: (GameContract.Intent) -> Unit
 ) {
-    EdgeToEdgeModalMvi(
-        onDismiss = { onIntent(GameContract.Intent.HideVictoryModal) }
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.EmojiEvents,
-                contentDescription = "Victory",
-                tint = Color(0xFF4169E1),
-                modifier = Modifier.size(32.dp)
-            )
-            Text(
-                text = "Congratulations!",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF4169E1),
-                textAlign = TextAlign.Center
-            )
-            Icon(
-                imageVector = Icons.Default.EmojiEvents,
-                contentDescription = "Victory",
-                tint = Color(0xFF4169E1),
-                modifier = Modifier.size(32.dp)
-            )
-        }
-        
-        Text(
-            text = "You solved the ${state.difficulty.displayName} word square!",
-            fontSize = 18.sp,
-            color = Color.Black,
-            textAlign = TextAlign.Center
-        )
-        
-        // Show stats
-        VictoryStatsMvi(
-            elapsedTime = state.elapsedTime,
-            guessCount = state.guessCount,
-            score = state.score
-        )
-        
-        // Action buttons
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+    AlertDialog(
+        onDismissRequest = { onIntent(GameContract.Intent.HideVictoryModal) },
+        confirmButton = {
             Button(
                 onClick = { onIntent(GameContract.Intent.HideVictoryModal) },
                 colors = ButtonDefaults.buttonColors(
@@ -85,21 +37,58 @@ fun VictoryModalMvi(
             ) {
                 Text("Continue", color = Color.White)
             }
-            
-            Button(
-                onClick = { onIntent(GameContract.Intent.ResetGame) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Gray
-                )
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onIntent(GameContract.Intent.ResetGame) }
             ) {
-                Text("New Game", color = Color.White)
+                Text("New Game", color = Color(0xFF4169E1))
+            }
+        },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EmojiEvents,
+                    contentDescription = "Victory",
+                    tint = Color(0xFF4169E1),
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "Congratulations!",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4169E1)
+                )
+            }
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "You solved the ${state.difficulty.displayName} word square!",
+                    fontSize = 16.sp,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+                
+                // Show stats
+                VictoryStatsMvi(
+                    elapsedTime = state.elapsedTime,
+                    guessCount = state.guessCount,
+                    score = state.score
+                )
             }
         }
-    }
+    )
 }
 
 /**
- * MVI-compatible Invalid Words Modal
+ * MVI-compatible Invalid Words Dialog (dismissible)
  */
 @Composable
 fun InvalidWordsModalMvi(
@@ -107,185 +96,364 @@ fun InvalidWordsModalMvi(
     hasNetworkError: Boolean,
     onIntent: (GameContract.Intent) -> Unit
 ) {
-    EdgeToEdgeModalMvi(
-        onDismiss = { onIntent(GameContract.Intent.HideInvalidWordsModal) }
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = "Warning",
-                tint = Color.Red,
-                modifier = Modifier.size(24.dp)
-            )
-            Text(
-                text = if (hasNetworkError) "Network Error" else "Invalid Words",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Red
-            )
-        }
-        
-        if (hasNetworkError) {
-            Text(
-                text = "Unable to validate words. Please check your internet connection and try again.",
-                fontSize = 16.sp,
-                color = Color.Black,
-                textAlign = TextAlign.Center
-            )
-        } else {
-            Text(
-                text = "The following words are not valid:",
-                fontSize = 16.sp,
-                color = Color.Black,
-                textAlign = TextAlign.Center
-            )
-            
-            LazyColumn(
-                modifier = Modifier.heightIn(max = 200.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+    AlertDialog(
+        onDismissRequest = { onIntent(GameContract.Intent.HideInvalidWordsModal) },
+        confirmButton = {
+            Button(
+                onClick = { onIntent(GameContract.Intent.HideInvalidWordsModal) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4169E1)
+                )
             ) {
-                items(invalidWords) { invalidWord ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFFEBEE)
-                        )
+                Text("OK", color = Color.White)
+            }
+        },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = "Warning",
+                    tint = Color.Red,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = if (hasNetworkError) "Network Error" else "Invalid Words",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Red
+                )
+            }
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (hasNetworkError) {
+                    Text(
+                        text = "Unable to validate words. Please check your internet connection and try again.",
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    Text(
+                        text = "The following words are not valid:",
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 150.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp)
-                        ) {
-                            Text(
-                                text = invalidWord.word,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Red
-                            )
-                            Text(
-                                text = "Position: ${invalidWord.position}",
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
+                        items(invalidWords) { invalidWord ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFFFFEBEE)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp)
+                                ) {
+                                    Text(
+                                        text = invalidWord.word,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Red
+                                    )
+                                    Text(
+                                        text = "Position: ${invalidWord.position}",
+                                        fontSize = 12.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        
-        Button(
-            onClick = { onIntent(GameContract.Intent.HideInvalidWordsModal) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4169E1)
-            )
-        ) {
-            Text("OK", color = Color.White)
-        }
-    }
+    )
 }
 
 /**
- * MVI-compatible Tutorial Modal
+ * MVI-compatible Tutorial Dialog (dismissible)
  */
 @Composable
 fun TutorialModalMvi(
     onIntent: (GameContract.Intent) -> Unit
 ) {
-    EdgeToEdgeModalMvi(
-        onDismiss = { onIntent(GameContract.Intent.HideTutorial) }
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Lightbulb,
-                contentDescription = "Tutorial",
-                tint = Color(0xFF4169E1),
-                modifier = Modifier.size(24.dp)
-            )
-            Text(
-                text = "How to Play",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF4169E1)
-            )
+    AlertDialog(
+        onDismissRequest = { onIntent(GameContract.Intent.HideTutorial) },
+        confirmButton = {
+            Button(
+                onClick = { onIntent(GameContract.Intent.HideTutorial) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4169E1)
+                )
+            ) {
+                Text("Got it!", color = Color.White)
+            }
+        },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lightbulb,
+                    contentDescription = "Tutorial",
+                    tint = Color(0xFF4169E1),
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "How to Play",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4169E1)
+                )
+            }
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                TutorialSectionMvi(
+                    icon = Icons.Default.GpsFixed,
+                    title = "Objective",
+                    description = "Fill the border squares to form valid words reading across the top, down the right, across the bottom, and up the left."
+                )
+                
+                TutorialSectionMvi(
+                    icon = Icons.Default.SportsEsports,
+                    title = "How to Play",
+                    description = "Tap a border square to select it, then use the virtual keyboard to enter letters. The center squares are already filled for you."
+                )
+                
+                TutorialSectionMvi(
+                    icon = Icons.Default.Extension,
+                    title = "Validation",
+                    description = "Tap Submit to check your words. Invalid words will be highlighted and you can try again."
+                )
+            }
         }
-        
-        TutorialSectionMvi(
-            icon = Icons.Default.GpsFixed,
-            title = "Objective",
-            description = "Fill the border squares to form valid words reading across the top, down the right, across the bottom, and up the left."
-        )
-        
-        TutorialSectionMvi(
-            icon = Icons.Default.SportsEsports,
-            title = "How to Play",
-            description = "Tap a border square to select it, then use the virtual keyboard to enter letters. The center squares are already filled for you."
-        )
-        
-        TutorialSectionMvi(
-            icon = Icons.Default.Extension,
-            title = "Validation",
-            description = "Tap Submit to check your words. Invalid words will be highlighted and you can try again."
-        )
-        
-        Button(
-            onClick = { onIntent(GameContract.Intent.HideTutorial) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4169E1)
-            )
-        ) {
-            Text("Got it!", color = Color.White)
-        }
-    }
+    )
 }
 
 /**
- * MVI-compatible Edge-to-Edge Modal
+ * MVI-compatible Previous Guesses Dialog (dismissible)
  */
 @Composable
-fun EdgeToEdgeModalMvi(
-    onDismiss: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit
+fun PreviousGuessesModalMvi(
+    previousGuesses: List<String>,
+    onIntent: (GameContract.Intent) -> Unit
 ) {
-    val modalHost = LocalModalHost.current
-    val scrollState = rememberScrollState()
-    
-    LaunchedEffect(Unit) {
-        modalHost.showModal(
-            content = {
-                BoxWithConstraints {
-                    val maxModalWidth = (maxWidth * 0.8f).coerceAtMost(600.dp)
-                    val maxModalHeight = (maxHeight * 0.8f).coerceAtMost(700.dp)
-                    
-                    Box(
-                        modifier = Modifier
-                            .widthIn(max = maxModalWidth)
-                            .heightIn(max = maxModalHeight)
-                            .background(Color.White, RoundedCornerShape(16.dp))
-                            .clickable { /* Consume clicks to prevent dismissal */ }
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .verticalScroll(scrollState)
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(20.dp),
-                            content = content
+    AlertDialog(
+        onDismissRequest = { onIntent(GameContract.Intent.HideGuessesModal) },
+        confirmButton = {
+            Button(
+                onClick = { onIntent(GameContract.Intent.HideGuessesModal) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4169E1)
+                )
+            ) {
+                Text("Close", color = Color.White)
+            }
+        },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.History,
+                    contentDescription = "Previous Guesses",
+                    tint = Color(0xFF4169E1),
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "Previous Guesses",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4169E1)
+                )
+            }
+        },
+        text = {
+            if (previousGuesses.isEmpty()) {
+                Text(
+                    text = "No guesses made yet.",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 200.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(previousGuesses.size) { index ->
+                        val guess = previousGuesses[index]
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFF5F5F5)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "#${index + 1}",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = guess,
+                                    fontSize = 14.sp,
+                                    color = Color.Black,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
+/**
+ * MVI-compatible Hamburger Menu Dialog (dismissible)
+ */
+@Composable
+fun HamburgerMenuModalMvi(
+    difficulty: com.hiremarknolan.wsq.models.Difficulty,
+    onIntent: (GameContract.Intent) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { onIntent(GameContract.Intent.HideHamburgerMenu) },
+        confirmButton = {
+            TextButton(
+                onClick = { onIntent(GameContract.Intent.HideHamburgerMenu) }
+            ) {
+                Text("Close", color = Color(0xFF4169E1))
+            }
+        },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Menu",
+                    tint = Color(0xFF4169E1),
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "Game Menu",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4169E1)
+                )
+            }
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Difficulty Selection
+                Text(
+                    text = "Difficulty",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    com.hiremarknolan.wsq.models.Difficulty.values().forEach { diff ->
+                        FilterChip(
+                            onClick = { 
+                                if (diff != difficulty) {
+                                    onIntent(GameContract.Intent.ChangeDifficulty(diff))
+                                    onIntent(GameContract.Intent.HideHamburgerMenu)
+                                }
+                            },
+                            label = { Text(diff.displayName, fontSize = 12.sp) },
+                            selected = diff == difficulty,
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFF4169E1),
+                                selectedLabelColor = Color.White,
+                                containerColor = Color(0xFFF5F5F5),
+                                labelColor = Color.Black
+                            )
                         )
                     }
                 }
-            },
-            onDismiss = onDismiss
-        )
-    }
-    
-    DisposableEffect(Unit) {
-        onDispose {
-            modalHost.hideModal()
+                
+                HorizontalDivider(color = Color(0xFFE0E0E0))
+                
+                // Menu Options
+                MenuOptionMvi(
+                    icon = Icons.Default.Lightbulb,
+                    text = "How to Play",
+                    onClick = {
+                        onIntent(GameContract.Intent.HideHamburgerMenu)
+                        onIntent(GameContract.Intent.ShowTutorial)
+                    }
+                )
+                
+                MenuOptionMvi(
+                    icon = Icons.Default.Refresh,
+                    text = "New Game",
+                    onClick = {
+                        onIntent(GameContract.Intent.HideHamburgerMenu)
+                        onIntent(GameContract.Intent.ResetGame)
+                    }
+                )
+            }
         }
+    )
+}
+
+@Composable
+private fun MenuOptionMvi(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = text,
+            tint = Color(0xFF4169E1),
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = text,
+            fontSize = 14.sp,
+            color = Color.Black
+        )
     }
 }
 

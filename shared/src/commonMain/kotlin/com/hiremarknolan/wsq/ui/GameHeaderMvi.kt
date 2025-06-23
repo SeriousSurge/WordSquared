@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +37,21 @@ fun GameHeaderMvi(
     }
     
     Box(modifier = modifier.fillMaxWidth()) {
+        // Hamburger menu button in top left
+        IconButton(
+            onClick = { onIntent(GameContract.Intent.ShowHamburgerMenu) },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(horizontal = 8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Menu,
+                contentDescription = "Menu",
+                tint = Color.Black,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        
         Column(
             modifier = Modifier.padding(top = 8.dp).align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally,

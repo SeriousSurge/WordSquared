@@ -1,15 +1,11 @@
 package com.hiremarknolan.wsq.presentation.game
-import com.hiremarknolan.wsq.domain.repository.GameStateData
-import com.hiremarknolan.wsq.domain.repository.PuzzleTargetsData
-import com.hiremarknolan.wsq.domain.repository.TileData
 import com.hiremarknolan.wsq.domain.usecase.*
-import com.hiremarknolan.wsq.game.GameGrid
 import com.hiremarknolan.wsq.models.*
 import com.hiremarknolan.wsq.mvi.MviViewModel
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import com.hiremarknolan.wsq.game.WordBoard
-import com.hiremarknolan.wsq.PlatformSettings
 
 /**
  * ViewModel for the game screen following MVI pattern
@@ -17,6 +13,7 @@ import com.hiremarknolan.wsq.PlatformSettings
 class GameViewModel(
     private val loadTodaysPuzzleUseCase: LoadTodaysPuzzleUseCase,
     private val validateWordsUseCase: ValidateWordsUseCase,
+    private val submitWordUseCase: SubmitWordUseCase,
     private val calculateScoreUseCase: CalculateScoreUseCase,
     private val saveGameStateUseCase: SaveGameStateUseCase,
     private val loadGameStateUseCase: LoadGameStateUseCase,
@@ -31,6 +28,9 @@ class GameViewModel(
 
     private var gameBoard: com.hiremarknolan.wsq.game.WordBoard? = null
     private var startTime: Long = 0L
+    
+    // Debouncing for save operations
+    private var saveJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -94,16 +94,64 @@ class GameViewModel(
 
     private suspend fun submitWord() {
         try {
-            gameBoard?.submitWord()
-            syncGameBoardState()
+            val currentState = currentState
+            if (currentState.tiles.isEmpty() || currentState.targetWords.isEmpty()) {
+                updateState { copy(errorMessage = "Game not properly initialized") }
+                return
+            }
             
-            // Check if game was completed
-            gameBoard?.let { board ->
-                if (board.isGameWon) {
-                    sendEffect(GameContract.Effect.GameCompleted)
-                    updateState { copy(showVictoryModal = true) }
-                } else if (board.invalidWords.isNotEmpty()) {
-                    updateState { copy(showInvalidWordsModal = true) }
+            // Use our new clean SubmitWordUseCase
+            when (val result = submitWordUseCase(currentState.tiles, currentState.targetWords)) {
+                is SubmitWordResult.Success -> {
+                    // Update state with new tiles and increment guess count
+                    updateState { 
+                        copy(
+                            tiles = result.updatedTiles,
+                            guessCount = guessCount + 1,
+                            errorMessage = null,
+                            invalidWords = emptyList(),
+                            hasNetworkError = false
+                        )
+                    }
+                    
+                    // Check if game is complete
+                    if (result.isGameComplete) {
+                        val gameScore = calculateScoreUseCase(currentState.difficulty, currentState.guessCount + 1)
+                        updateState { 
+                            copy(
+                                isGameWon = true,
+                                isGameOver = true,
+                                score = gameScore.totalScore,
+                                showVictoryModal = true
+                            )
+                        }
+                        sendEffect(GameContract.Effect.GameCompleted)
+                    } else {
+                        // Move cursor to first available editable position
+                        val firstEditablePos = findFirstEditablePosition(result.updatedTiles)
+                        updateState { copy(selectedPosition = firstEditablePos) }
+                    }
+                }
+                
+                is SubmitWordResult.InvalidWords -> {
+                    updateState { 
+                        copy(
+                            invalidWords = result.invalidWords,
+                            hasNetworkError = result.hasNetworkError,
+                            showInvalidWordsModal = true,
+                            errorMessage = null
+                        )
+                    }
+                }
+                
+                is SubmitWordResult.Error -> {
+                    updateState { 
+                        copy(
+                            errorMessage = result.message,
+                            invalidWords = emptyList(),
+                            hasNetworkError = false
+                        )
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -115,6 +163,18 @@ class GameViewModel(
             }
         }
     }
+    
+    private fun findFirstEditablePosition(tiles: Array<Array<Tile>>): Pair<Int, Int>? {
+        for (row in tiles.indices) {
+            for (col in tiles[row].indices) {
+                val tile = tiles[row][col]
+                if (tile.state == TileState.EDITABLE && !tile.isCorrect) {
+                    return row to col
+                }
+            }
+        }
+        return null
+    }
 
     private suspend fun resetGame() {
         gameBoard?.newGame()
@@ -123,24 +183,31 @@ class GameViewModel(
 
     private fun syncGameBoardState() {
         gameBoard?.let { board ->
-            updateState { 
-                copy(
-                    tiles = board.tiles,
-                    selectedPosition = board.selectedPosition,
-                    score = board.score,
-                    isGameOver = board.isGameOver,
-                    isGameWon = board.isGameWon,
-                    guessCount = board.guessCount,
-                    errorMessage = board.errorMessage,
-                    invalidWords = board.invalidWords,
-                    hasNetworkError = board.hasNetworkError,
-                    previousGuesses = board.previousGuesses,
-                    isLoading = board.isLoading,
-                    currentPuzzleDate = board.currentPuzzleDate,
-                    completionTime = board.completionTime,
-                    difficulty = board.difficulty,
-                    currentGridSize = board.currentGridSize
-                )
+            val currentState = currentState
+            
+            // Only update if there are actual changes to avoid unnecessary recomposition
+            val newState = currentState.copy(
+                tiles = board.tiles,
+                selectedPosition = board.selectedPosition,
+                score = board.score,
+                isGameOver = board.isGameOver,
+                isGameWon = board.isGameWon,
+                guessCount = board.guessCount,
+                errorMessage = board.errorMessage,
+                invalidWords = board.invalidWords,
+                hasNetworkError = board.hasNetworkError,
+                previousGuesses = board.previousGuesses,
+                isLoading = board.isLoading,
+                currentPuzzleDate = board.currentPuzzleDate,
+                completionTime = board.completionTime,
+                difficulty = board.difficulty,
+                currentGridSize = board.currentGridSize,
+                targetWords = board.targetWords
+            )
+            
+            // Only update state if it actually changed
+            if (newState != currentState) {
+                updateState(newState)
             }
         }
     }
@@ -163,25 +230,67 @@ class GameViewModel(
 
     private suspend fun selectPosition(row: Int, col: Int) {
         gameBoard?.selectPosition(row, col)
-        syncGameBoardState()
+        // Only sync position and tiles for selection changes
+        gameBoard?.let { board ->
+            updateState { 
+                copy(
+                    selectedPosition = board.selectedPosition,
+                    tiles = board.tiles
+                )
+            }
+        }
         sendEffect(GameContract.Effect.RequestFocus(row, col))
     }
 
     private suspend fun clearSelection() {
         gameBoard?.clearSelection()
-        syncGameBoardState()
+        gameBoard?.let { board ->
+            updateState { 
+                copy(
+                    selectedPosition = board.selectedPosition,
+                    errorMessage = board.errorMessage
+                )
+            }
+        }
     }
 
     private suspend fun enterLetter(letter: Char) {
         gameBoard?.enterLetter(letter)
-        syncGameBoardState()
-        sendEffect(GameContract.Effect.SaveGameState)
+        // Only sync tiles and position for letter entry
+        gameBoard?.let { board ->
+            updateState { 
+                copy(
+                    tiles = board.tiles,
+                    selectedPosition = board.selectedPosition
+                )
+            }
+        }
+        debouncedSave()
     }
 
     private suspend fun deleteLetter() {
         gameBoard?.deleteLetter()
-        syncGameBoardState()
-        sendEffect(GameContract.Effect.SaveGameState)
+        // Only sync tiles and position for letter deletion
+        gameBoard?.let { board ->
+            updateState { 
+                copy(
+                    tiles = board.tiles,
+                    selectedPosition = board.selectedPosition
+                )
+            }
+        }
+        debouncedSave()
+    }
+    
+    /**
+     * Debounced save to prevent excessive save operations
+     */
+    private fun debouncedSave() {
+        saveJob?.cancel()
+        saveJob = viewModelScope.launch {
+            delay(500) // Wait 500ms before saving
+            sendEffect(GameContract.Effect.SaveGameState)
+        }
     }
 
     private suspend fun clearErrors() {
@@ -192,6 +301,15 @@ class GameViewModel(
                 hasNetworkError = false
             )
         }
+    }
+    
+    /**
+     * Clean up resources when ViewModel is no longer needed
+     */
+    fun cleanup() {
+        saveJob?.cancel()
+        gameBoard?.dispose()
+        dispose() // Call the base dispose method
     }
 }
 

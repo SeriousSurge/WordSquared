@@ -7,6 +7,7 @@ import com.hiremarknolan.wsq.domain.repository.GameRepository
 import com.hiremarknolan.wsq.domain.repository.GamePersistenceRepository
 import com.hiremarknolan.wsq.domain.repository.GameStateData
 import com.hiremarknolan.wsq.models.Difficulty
+import com.hiremarknolan.wsq.models.Tile
 import com.hiremarknolan.wsq.models.GameScore
 import com.hiremarknolan.wsq.models.WordSquareBorder
 
