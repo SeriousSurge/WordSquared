@@ -16,8 +16,13 @@ import com.hiremarknolan.wsq.PlatformSettings
 import org.koin.core.component.get
 import androidx.compose.foundation.focusable
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.utf16CodePoint
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.key
@@ -125,6 +130,36 @@ private fun ErrorContent(
     }
 }
 
+// Key event handling helper
+private fun handleKeyEvent(
+    keyEvent: KeyEvent,
+    onIntent: (GameContract.Intent) -> Unit,
+    coroutineScope: CoroutineScope
+): Boolean {
+    if (keyEvent.type == KeyEventType.KeyUp) {
+        return when (keyEvent.key) {
+            Key.Enter -> {
+                coroutineScope.launch { onIntent(GameContract.Intent.SubmitWord) }
+                true
+            }
+            Key.Backspace -> {
+                onIntent(GameContract.Intent.DeleteLetter)
+                true
+            }
+            else -> {
+                val char = keyEvent.utf16CodePoint.toChar()
+                if (char.isLetter()) {
+                    onIntent(GameContract.Intent.EnterLetter(char.uppercaseChar()))
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    }
+    return false
+}
+
 @Composable
 private fun GameContent(
     state: GameContract.State,
@@ -133,6 +168,7 @@ private fun GameContent(
     // Inject PlatformSettings and setup keyboard focus
     val platformSettings: PlatformSettings = remember { object : KoinComponent {}.get<PlatformSettings>() }
     val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
     BoxWithConstraints(
@@ -141,23 +177,7 @@ private fun GameContent(
             .padding(16.dp)
             .focusRequester(focusRequester)
             .focusable()
-            .onKeyEvent { keyEvent ->
-                if (keyEvent.type == KeyEventType.KeyDown) {
-                    val key = keyEvent.key
-                    when {
-                        key == Key.Enter -> {
-                            onIntent(GameContract.Intent.SubmitWord)
-                            true
-                        }
-                        key == Key.Backspace -> {
-                            onIntent(GameContract.Intent.DeleteLetter)
-                            true
-                        }
-
-                        else -> false
-                    }
-                } else false
-            }
+            .onKeyEvent { keyEvent -> handleKeyEvent(keyEvent, onIntent, coroutineScope) }
     ) {
         val portrait = maxWidth < maxHeight
 
