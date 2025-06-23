@@ -1,5 +1,6 @@
 package com.hiremarknolan.wsq.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -25,7 +26,6 @@ fun GameHeaderMvi(
     completionTime: Long,
     isGameWon: Boolean,
     previousGuesses: List<String>,
-    currentPuzzleDate: String,
     onIntent: (GameContract.Intent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -163,7 +163,6 @@ fun CompactGameHeaderMvi(
     difficulty: Difficulty,
     completionTime: Long,
     isGameWon: Boolean,
-    previousGuesses: List<String>,
     onIntent: (GameContract.Intent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -179,12 +178,28 @@ fun CompactGameHeaderMvi(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Logo
-        Text(
-            text = "WordSquared",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            IconButton(
+                onClick = { onIntent(GameContract.Intent.ShowHamburgerMenu) },
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Menu",
+                    tint = Color.Black,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Text(
+                text = "WordSquared",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
         
         // Difficulty and daily status
         Row(
@@ -245,20 +260,6 @@ fun CompactGameHeaderMvi(
                     color = Color.Black
                 )
                 Text("Guesses", fontSize = 10.sp, color = Color.Black)
-            }
-            
-            // History button (compact)
-            if (previousGuesses.isNotEmpty()) {
-                IconButton(
-                    onClick = { onIntent(GameContract.Intent.ShowGuessesModal) }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.History,
-                        contentDescription = "View history",
-                        modifier = Modifier.size(16.dp),
-                        tint = Color.Black
-                    )
-                }
             }
         }
     }

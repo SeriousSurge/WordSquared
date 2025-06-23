@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
@@ -121,39 +122,108 @@ private fun GameContent(
     state: GameContract.State,
     onIntent: (GameContract.Intent) -> Unit
 ) {
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(16.dp)
     ) {
-        // Game Header
-        GameHeaderMvi(
-            elapsedTime = state.elapsedTime,
-            guessCount = state.guessCount,
-            difficulty = state.difficulty,
-            completionTime = state.completionTime,
-            isGameWon = state.isGameWon,
-            previousGuesses = state.previousGuesses,
-            currentPuzzleDate = state.currentPuzzleDate,
-            onIntent = onIntent
-        )
-        
-        // Game Board
-        GameBoardMvi(
-            tiles = state.tiles,
-            selectedPosition = state.selectedPosition,
-            gridSize = state.currentGridSize,
-            isGameWon = state.isGameWon,
-            onIntent = onIntent,
-            modifier = Modifier.weight(1f)
-        )
-        
-        // Virtual Keyboard
-        VirtualKeyboardMvi(
-            onIntent = onIntent,
-            modifier = Modifier.fillMaxWidth()
-        )
+        val portrait = maxWidth < maxHeight
+
+        if (portrait) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Game Header
+                GameHeaderMvi(
+                    elapsedTime = state.elapsedTime,
+                    guessCount = state.guessCount,
+                    difficulty = state.difficulty,
+                    completionTime = state.completionTime,
+                    isGameWon = state.isGameWon,
+                    previousGuesses = state.previousGuesses,
+                    onIntent = onIntent
+                )
+
+                // Game Board
+                GameBoardMvi(
+                    tiles = state.tiles,
+                    selectedPosition = state.selectedPosition,
+                    gridSize = state.currentGridSize,
+                    isGameWon = state.isGameWon,
+                    onIntent = onIntent,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Virtual Keyboard
+                VirtualKeyboardMvi(
+                    onIntent = onIntent,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    Modifier.weight(1f)
+                ) {
+                    CompactGameHeaderMvi(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        elapsedTime = state.elapsedTime,
+                        guessCount = state.guessCount,
+                        difficulty = state.difficulty,
+                        completionTime = state.completionTime,
+                        isGameWon = state.isGameWon,
+                        onIntent = onIntent
+                    )
+
+                    // Left split keyboard
+                    SplitKeyboardLeftMvi(
+                        onIntent = onIntent,
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .wrapContentHeight()
+                    )
+                }
+
+                // Game Board in center
+                GameBoardMvi(
+                    tiles = state.tiles,
+                    selectedPosition = state.selectedPosition,
+                    gridSize = state.currentGridSize,
+                    isGameWon = state.isGameWon,
+                    onIntent = onIntent,
+                    modifier = Modifier
+                        .weight(2f)
+                        .padding(vertical = 24.dp, horizontal = 16.dp)
+                )
+
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // List of previous guesses
+                    PreviousGuessesListMvi(
+                        previousGuesses = state.previousGuesses,
+                        onIntent = onIntent,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(8.dp)
+                    )
+
+                    // Right split keyboard
+                    SplitKeyboardRightMvi(
+                        onIntent = onIntent,
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .wrapContentHeight()
+                    )
+                }
+            }
+        }
     }
     
     // Handle modals
