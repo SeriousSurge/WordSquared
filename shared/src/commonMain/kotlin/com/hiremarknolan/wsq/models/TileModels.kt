@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 /**
  * Represents the state of a tile in the game grid
  */
+@Serializable
 enum class TileState {
     CENTER,    // Non-editable center squares (filled with puzzle interior)
     EDITABLE,  // Border squares that can be edited
@@ -14,6 +15,7 @@ enum class TileState {
 /**
  * Represents a single tile in the game grid
  */
+@Serializable
 data class Tile(
     val row: Int,
     val col: Int,

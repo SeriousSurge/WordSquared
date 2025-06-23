@@ -88,6 +88,56 @@ fun VictoryModalMvi(
 }
 
 /**
+ * MVI-compatible Error Dialog (dismissible)
+ */
+@Composable
+fun ErrorDialogMvi(
+    errorMessage: String,
+    onIntent: (GameContract.Intent) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { onIntent(GameContract.Intent.HideErrorDialog) },
+        confirmButton = {
+            Button(
+                onClick = { onIntent(GameContract.Intent.HideErrorDialog) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4169E1)
+                )
+            ) {
+                Text("OK", color = Color.White)
+            }
+        },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Information",
+                    tint = Color(0xFF4169E1),
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "Notice",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4169E1)
+                )
+            }
+        },
+        text = {
+            Text(
+                text = errorMessage,
+                fontSize = 14.sp,
+                color = Color.Black,
+                textAlign = TextAlign.Center
+            )
+        }
+    )
+}
+
+/**
  * MVI-compatible Invalid Words Dialog (dismissible)
  */
 @Composable

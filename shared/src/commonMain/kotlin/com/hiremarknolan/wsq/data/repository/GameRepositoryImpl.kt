@@ -1,22 +1,23 @@
 package com.hiremarknolan.wsq.data.repository
 
 import com.hiremarknolan.wsq.domain.models.PuzzleDomainData
-import com.hiremarknolan.wsq.domain.models.WordSquareTargets
 import com.hiremarknolan.wsq.domain.models.WordValidationResult
 import com.hiremarknolan.wsq.domain.repository.GameRepository
-import com.hiremarknolan.wsq.game.WordValidationService
-import com.hiremarknolan.wsq.models.Difficulty
-import com.hiremarknolan.wsq.models.WordSquareBorder
+import com.hiremarknolan.wsq.domain.usecase.WordValidationDomainService
+import com.hiremarknolan.wsq.models.*
 import com.hiremarknolan.wsq.network.WordSquareApiClient
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 /**
- * Implementation of GameRepository using existing services
+ * Implementation of GameRepository using domain services
  */
 class GameRepositoryImpl(
     private val apiClient: WordSquareApiClient
 ) : GameRepository {
     
-    private val validationService = WordValidationService(apiClient)
+    private val validationService = WordValidationDomainService(apiClient)
     
     override suspend fun loadTodaysPuzzle(difficulty: Difficulty): Result<PuzzleDomainData> {
         return try {
@@ -30,19 +31,29 @@ class GameRepositoryImpl(
             
             val puzzle = puzzleResponse.puzzles[difficultyKey]
             if (puzzle != null) {
+                // Create tiles array from the puzzle
+                val tiles = createTilesFromPuzzle(puzzle, difficulty.gridSize)
+                
+                // Create target words map
+                val targetWords = mapOf(
+                    "top" to puzzle.targets.top,
+                    "right" to puzzle.targets.right,
+                    "bottom" to puzzle.targets.bottom,
+                    "left" to puzzle.targets.left
+                )
+                
+                // Find first editable position
+                val firstEditablePosition = findFirstEditablePosition(tiles)
+                
+                // Get current date
+                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                
                 val domainData = PuzzleDomainData(
-                    size = puzzle.size,
-                    targets = WordSquareTargets(
-                        top = puzzle.targets.top,
-                        right = puzzle.targets.right,
-                        bottom = puzzle.targets.bottom,
-                        left = puzzle.targets.left
-                    ),
-                    grid = Array(puzzle.size) { row ->
-                        Array(puzzle.size) { col ->
-                            puzzle.grid[row][col].firstOrNull() ?: ' '
-                        }
-                    }
+                    tiles = tiles,
+                    targetWords = targetWords,
+                    firstEditablePosition = firstEditablePosition,
+                    puzzleDate = today,
+                    difficulty = difficulty
                 )
                 Result.success(domainData)
             } else {
@@ -53,13 +64,65 @@ class GameRepositoryImpl(
         }
     }
     
+    private fun createTilesFromPuzzle(puzzle: com.hiremarknolan.wsq.network.CloudWordSquare, gridSize: Int): Array<Array<Tile>> {
+        return Array(gridSize) { row ->
+            Array(gridSize) { col ->
+                when {
+                    // Corner positions (editable)
+                    (row == 0 && col == 0) || 
+                    (row == 0 && col == gridSize - 1) || 
+                    (row == gridSize - 1 && col == 0) || 
+                    (row == gridSize - 1 && col == gridSize - 1) -> {
+                        Tile(
+                            row = row,
+                            col = col,
+                            letter = ' ',
+                            state = TileState.EDITABLE
+                        )
+                    }
+                    
+                    // Border positions (editable)
+                    row == 0 || row == gridSize - 1 || col == 0 || col == gridSize - 1 -> {
+                        Tile(
+                            row = row,
+                            col = col, 
+                            letter = ' ',
+                            state = TileState.EDITABLE
+                        )
+                    }
+                    
+                    // Center positions (fixed from puzzle)
+                    else -> {
+                        val puzzleLetter = if (row < puzzle.grid.size && col < puzzle.grid[row].size) {
+                            puzzle.grid[row][col].firstOrNull() ?: ' '
+                        } else {
+                            ' '
+                        }
+                        Tile(
+                            row = row,
+                            col = col,
+                            letter = puzzleLetter,
+                            state = TileState.CENTER
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
+    private fun findFirstEditablePosition(tiles: Array<Array<Tile>>): Pair<Int, Int>? {
+        for (row in tiles.indices) {
+            for (col in tiles[row].indices) {
+                if (tiles[row][col].state == TileState.EDITABLE) {
+                    return row to col
+                }
+            }
+        }
+        return null
+    }
+    
     override suspend fun validateWords(words: WordSquareBorder): WordValidationResult {
-        val validationResult = validationService.validateWordSquare(words)
-        return WordValidationResult(
-            isValid = validationResult.isValid,
-            invalidWords = validationResult.invalidWords,
-            hasNetworkError = validationResult.hasNetworkError
-        )
+        return validationService.validateWordSquare(words)
     }
     
     override suspend fun validateSingleWord(word: String): Result<Boolean> {

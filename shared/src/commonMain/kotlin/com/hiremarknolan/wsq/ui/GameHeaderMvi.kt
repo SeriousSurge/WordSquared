@@ -31,7 +31,7 @@ fun GameHeaderMvi(
 ) {
     // Use completion time if puzzle is completed, otherwise use elapsed time
     val displayTime = if (isGameWon && completionTime > 0) {
-        completionTime / 1000 // Convert from milliseconds to seconds
+        completionTime
     } else {
         elapsedTime
     }
@@ -165,7 +165,7 @@ fun CompactGameHeaderMvi(
     modifier: Modifier = Modifier
 ) {
     val displayTime = if (isGameWon && completionTime > 0) {
-        completionTime / 1000
+        completionTime
     } else {
         elapsedTime
     }

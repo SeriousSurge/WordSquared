@@ -1,22 +1,22 @@
-package com.hiremarknolan.wsq.game
+package com.hiremarknolan.wsq.domain.usecase
 
-import com.hiremarknolan.wsq.models.ValidationResult
+import com.hiremarknolan.wsq.domain.models.WordValidationResult
 import com.hiremarknolan.wsq.models.InvalidWord
 import com.hiremarknolan.wsq.models.WordSquareBorder
 import com.hiremarknolan.wsq.network.WordSquareApiClient
 import com.hiremarknolan.wsq.network.NetworkValidationException
 
 /**
- * Service responsible for validating word square submissions
- * Separates validation logic from game logic for better organization
+ * Domain service responsible for validating word square submissions
+ * Part of clean MVI architecture - moved from game folder
  */
-class WordValidationService(private val apiClient: WordSquareApiClient) {
+class WordValidationDomainService(private val apiClient: WordSquareApiClient) {
     
     /**
      * Validates all four words in a word square border
-     * Returns a ValidationResult with detailed information about the validation
+     * Returns a WordValidationResult with detailed information about the validation
      */
-    suspend fun validateWordSquare(border: WordSquareBorder): ValidationResult {
+    suspend fun validateWordSquare(border: WordSquareBorder): WordValidationResult {
         val wordsToValidate = listOf(
             "top" to border.top,
             "left" to border.left,
@@ -25,7 +25,6 @@ class WordValidationService(private val apiClient: WordSquareApiClient) {
         )
         
         val invalidWords = mutableListOf<InvalidWord>()
-        var correctCells = 0
         var hasNetworkError = false
         var networkErrorCount = 0
         
@@ -34,7 +33,6 @@ class WordValidationService(private val apiClient: WordSquareApiClient) {
                 try {
                     val isValid = apiClient.isValidWord(word)
                     if (isValid) {
-                        correctCells += word.length
                         println("✅ '$word' ($position) is valid")
                     } else {
                         // Word not found in local dictionary or API
@@ -77,10 +75,9 @@ class WordValidationService(private val apiClient: WordSquareApiClient) {
         println("   - Has network error flag: $hasNetworkError")
         println("   - Error message: $errorMessage")
         
-        return ValidationResult(
+        return WordValidationResult(
             isValid = isValid,
             errorMessage = errorMessage,
-            correctCells = correctCells,
             invalidWords = invalidWords,
             hasNetworkError = hasNetworkError
         )
@@ -89,15 +86,15 @@ class WordValidationService(private val apiClient: WordSquareApiClient) {
     /**
      * Validates a single word using the API client
      */
-    suspend fun validateSingleWord(word: String): ValidationResult {
+    suspend fun validateSingleWord(word: String): WordValidationResult {
         return try {
             val isValid = apiClient.isValidWord(word)
-            ValidationResult(
+            WordValidationResult(
                 isValid = isValid,
                 errorMessage = if (!isValid) "'$word' is not a valid word" else null
             )
         } catch (e: Exception) {
-            ValidationResult(
+            WordValidationResult(
                 isValid = false,
                 errorMessage = "Network error while checking word: ${e.message}"
             )

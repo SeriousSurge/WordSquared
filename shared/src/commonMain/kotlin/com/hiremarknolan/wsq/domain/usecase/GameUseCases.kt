@@ -18,20 +18,25 @@ class LoadTodaysPuzzleUseCase(
     private val gameRepository: GameRepository,
     private val persistenceRepository: GamePersistenceRepository
 ) {
-    suspend operator fun invoke(difficulty: Difficulty): Result<PuzzleDomainData> {
-        return try {
-            // Try to load from repository
-            val result = gameRepository.loadTodaysPuzzle(difficulty)
-            
-            // If successful, clean up old states
-            if (result.isSuccess) {
-                persistenceRepository.cleanupOldStates()
-            }
-            
-            result
-        } catch (e: Exception) {
-            Result.failure(e)
+    suspend operator fun invoke(difficulty: Difficulty): PuzzleDomainData {
+        // Load puzzle from repository
+        val result = gameRepository.loadTodaysPuzzle(difficulty)
+        
+        if (result.isFailure) {
+            throw result.exceptionOrNull() ?: Exception("Failed to load puzzle")
         }
+        
+        val puzzleData = result.getOrThrow()
+        
+        // Clean up old states in background
+        try {
+            persistenceRepository.cleanupOldStates()
+        } catch (e: Exception) {
+            // Silent fail for cleanup
+            println("Warning: Failed to cleanup old states: ${e.message}")
+        }
+        
+        return puzzleData
     }
 }
 

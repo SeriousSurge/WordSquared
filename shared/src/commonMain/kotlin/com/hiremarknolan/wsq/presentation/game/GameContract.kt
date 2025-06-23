@@ -37,7 +37,8 @@ class GameContract {
         val showInvalidWordsModal: Boolean = false,
         val showGuessesModal: Boolean = false,
         val showHamburgerMenu: Boolean = false,
-        val targetWords: Map<String, String> = emptyMap()
+        val targetWords: Map<String, String> = emptyMap(),
+        val showErrorDialog: Boolean = false
     ) : MviState {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -67,6 +68,7 @@ class GameContract {
             if (showGuessesModal != other.showGuessesModal) return false
             if (showHamburgerMenu != other.showHamburgerMenu) return false
             if (targetWords != other.targetWords) return false
+            if (showErrorDialog != other.showErrorDialog) return false
 
             return true
         }
@@ -94,6 +96,7 @@ class GameContract {
             result = 31 * result + showGuessesModal.hashCode()
             result = 31 * result + showHamburgerMenu.hashCode()
             result = 31 * result + targetWords.hashCode()
+            result = 31 * result + showErrorDialog.hashCode()
             return result
         }
     }
@@ -129,6 +132,7 @@ class GameContract {
         
         // Error handling
         object ClearErrors : Intent()
+        object HideErrorDialog : Intent()
     }
     
     /**

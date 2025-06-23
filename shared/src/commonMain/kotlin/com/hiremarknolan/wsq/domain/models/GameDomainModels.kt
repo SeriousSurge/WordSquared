@@ -86,9 +86,11 @@ data class WordSquareTargets(
  * Domain model for puzzle data
  */
 data class PuzzleDomainData(
-    val size: Int,
-    val targets: WordSquareTargets,
-    val grid: Array<Array<Char>>
+    val tiles: Array<Array<Tile>>,
+    val targetWords: Map<String, String>,
+    val firstEditablePosition: Pair<Int, Int>?,
+    val puzzleDate: String,
+    val difficulty: Difficulty
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -96,17 +98,21 @@ data class PuzzleDomainData(
 
         other as PuzzleDomainData
 
-        if (size != other.size) return false
-        if (targets != other.targets) return false
-        if (!grid.contentDeepEquals(other.grid)) return false
+        if (!tiles.contentDeepEquals(other.tiles)) return false
+        if (targetWords != other.targetWords) return false
+        if (firstEditablePosition != other.firstEditablePosition) return false
+        if (puzzleDate != other.puzzleDate) return false
+        if (difficulty != other.difficulty) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = size
-        result = 31 * result + targets.hashCode()
-        result = 31 * result + grid.contentDeepHashCode()
+        var result = tiles.contentDeepHashCode()
+        result = 31 * result + targetWords.hashCode()
+        result = 31 * result + (firstEditablePosition?.hashCode() ?: 0)
+        result = 31 * result + puzzleDate.hashCode()
+        result = 31 * result + difficulty.hashCode()
         return result
     }
 }
@@ -127,6 +133,7 @@ data class GameResult(
  */
 data class WordValidationResult(
     val isValid: Boolean,
-    val invalidWords: List<InvalidWord>,
-    val hasNetworkError: Boolean
+    val invalidWords: List<InvalidWord> = emptyList(),
+    val hasNetworkError: Boolean = false,
+    val errorMessage: String? = null
 ) 

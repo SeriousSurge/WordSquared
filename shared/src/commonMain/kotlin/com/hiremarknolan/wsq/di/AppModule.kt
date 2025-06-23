@@ -34,7 +34,7 @@ val appModule = module {
     single { CompleteGameUseCase(get(), get()) }
     
     // ViewModels - using single instead of viewModel for cross-platform compatibility
-        single {
+    single {
         GameViewModel(
             loadTodaysPuzzleUseCase = get(),
             validateWordsUseCase = get(),
@@ -45,8 +45,7 @@ val appModule = module {
             getSavedElapsedTimeUseCase = get(),
             difficultyPreferencesUseCase = get(),
             getInitialDifficultyUseCase = get(),
-            completeGameUseCase = get(),
-            settings = get()
+            completeGameUseCase = get()
         )
     }
 }

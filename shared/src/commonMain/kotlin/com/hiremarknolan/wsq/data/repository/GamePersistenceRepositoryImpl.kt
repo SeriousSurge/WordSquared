@@ -2,10 +2,10 @@ package com.hiremarknolan.wsq.data.repository
 
 import com.hiremarknolan.wsq.domain.repository.GamePersistenceRepository
 import com.hiremarknolan.wsq.domain.repository.GameStateData
-import com.hiremarknolan.wsq.domain.repository.TileData
-import com.hiremarknolan.wsq.domain.repository.PuzzleTargetsData
 import com.hiremarknolan.wsq.models.Difficulty
 import com.hiremarknolan.wsq.models.GameConfiguration
+import com.hiremarknolan.wsq.models.Tile
+import com.hiremarknolan.wsq.models.TileState
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.*
 import kotlinx.serialization.Serializable
@@ -37,13 +37,24 @@ class GamePersistenceRepositoryImpl(
                 completionTime = gameData.completionTime,
                 completionGuesses = gameData.completionGuesses,
                 completionScore = gameData.completionScore,
-                tiles = gameData.tiles,
+                tiles = gameData.tiles.map { row ->
+                    row.map { tile ->
+                        SerializableTile(
+                            row = tile.row,
+                            col = tile.col,
+                            letter = tile.letter,
+                            state = tile.state.name,
+                            previousAttempts = tile.previousAttempts
+                        )
+                    }
+                },
                 previousGuesses = gameData.previousGuesses,
                 elapsedTime = elapsedTime,
-                selectedRow = gameData.selectedRow,
-                selectedCol = gameData.selectedCol,
-                puzzleTargets = gameData.puzzleTargets,
-                puzzleGrid = gameData.puzzleGrid
+                selectedPosition = gameData.selectedPosition,
+                guessCount = gameData.guessCount,
+                isGameWon = gameData.isGameWon,
+                isGameOver = gameData.isGameOver,
+                score = gameData.score
             )
             
             val json = Json.encodeToString(serializedData)
@@ -64,16 +75,28 @@ class GamePersistenceRepositoryImpl(
             if (json.isNotEmpty()) {
                 val serialized = Json.decodeFromString<SerializableGameState>(json)
                 GameStateData(
+                    tiles = serialized.tiles.map { row ->
+                        row.map { tile ->
+                            Tile(
+                                row = tile.row,
+                                col = tile.col,
+                                letter = tile.letter,
+                                state = TileState.valueOf(tile.state),
+                                previousAttempts = tile.previousAttempts.toMutableList()
+                            )
+                        }.toTypedArray()
+                    }.toTypedArray(),
+                    selectedPosition = serialized.selectedPosition,
+                    guessCount = serialized.guessCount,
+                    previousGuesses = serialized.previousGuesses,
+                    isGameWon = serialized.isGameWon,
+                    isGameOver = serialized.isGameOver,
+                    score = serialized.score,
+                    elapsedTime = serialized.elapsedTime,
                     isCompleted = serialized.isCompleted,
                     completionTime = serialized.completionTime,
                     completionGuesses = serialized.completionGuesses,
-                    completionScore = serialized.completionScore,
-                    tiles = serialized.tiles,
-                    previousGuesses = serialized.previousGuesses,
-                    selectedRow = serialized.selectedRow,
-                    selectedCol = serialized.selectedCol,
-                    puzzleTargets = serialized.puzzleTargets,
-                    puzzleGrid = serialized.puzzleGrid
+                    completionScore = serialized.completionScore
                 )
             } else {
                 null
@@ -86,23 +109,7 @@ class GamePersistenceRepositoryImpl(
     
     override suspend fun getSavedElapsedTime(difficulty: Difficulty): Long {
         val savedState = loadGameState(difficulty)
-        return savedState?.let { 
-            // Convert serialized state back to get elapsed time
-            try {
-                val currentDate = getCurrentDateString()
-                val difficultyKey = getDifficultyKey(difficulty)
-                val key = "daily_puzzle_${currentDate}_${difficultyKey}"
-                val json = settings.getString(key, "")
-                if (json.isNotEmpty()) {
-                    val serialized = Json.decodeFromString<SerializableGameState>(json)
-                    serialized.elapsedTime
-                } else {
-                    0L
-                }
-            } catch (e: Exception) {
-                0L
-            }
-        } ?: 0L
+        return savedState?.elapsedTime ?: 0L
     }
     
     override suspend fun setLastUsedDifficulty(difficulty: Difficulty) {
@@ -195,11 +202,21 @@ private data class SerializableGameState(
     val completionTime: Long = 0,
     val completionGuesses: Int = 0,
     val completionScore: Int = 0,
-    val tiles: List<List<TileData>> = emptyList(),
+    val tiles: List<List<SerializableTile>> = emptyList(),
     val previousGuesses: List<String> = emptyList(),
     val elapsedTime: Long = 0,
-    val selectedRow: Int = -1,
-    val selectedCol: Int = -1,
-    val puzzleTargets: PuzzleTargetsData? = null,
-    val puzzleGrid: List<List<String>>? = null
+    val selectedPosition: Pair<Int, Int>? = null,
+    val guessCount: Int = 0,
+    val isGameWon: Boolean = false,
+    val isGameOver: Boolean = false,
+    val score: Int = 0
+)
+
+@Serializable
+private data class SerializableTile(
+    val row: Int,
+    val col: Int,
+    val letter: Char,
+    val state: String,
+    val previousAttempts: List<Char>
 ) 

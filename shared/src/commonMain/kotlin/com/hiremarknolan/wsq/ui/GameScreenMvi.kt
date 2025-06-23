@@ -63,7 +63,7 @@ fun GameScreenMvi(
     ) {
         when {
             state.isLoading -> LoadingContent()
-            state.errorMessage != null -> ErrorContent(
+            state.errorMessage != null && !state.showErrorDialog -> ErrorContent(
                 error = state.errorMessage!!,
                 onRetry = { actualViewModel.processIntent(GameContract.Intent.LoadGame) }
             )
@@ -160,6 +160,12 @@ private fun GameContent(
             InvalidWordsModalMvi(
                 invalidWords = state.invalidWords,
                 hasNetworkError = state.hasNetworkError,
+                onIntent = onIntent
+            )
+        }
+        state.showErrorDialog && state.errorMessage != null -> {
+            ErrorDialogMvi(
+                errorMessage = state.errorMessage!!,
                 onIntent = onIntent
             )
         }
