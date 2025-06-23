@@ -7,8 +7,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
 import com.hiremarknolan.wsq.presentation.game.GameContract
 import com.hiremarknolan.wsq.presentation.game.GameViewModel
 import org.koin.core.component.KoinComponent
@@ -38,35 +36,6 @@ fun GameScreenMvi(
 ) {
     val actualViewModel: GameViewModel = viewModel ?: throw IllegalStateException("GameViewModel must be provided")
     val state by actualViewModel.state.collectAsState()
-    
-    // Handle effects (one-time events)
-    LaunchedEffect(Unit) {
-        actualViewModel.effects.onEach { effect ->
-            when (effect) {
-                is GameContract.Effect.ShowError -> {
-                    // Handle error display
-                }
-                is GameContract.Effect.ShowSuccess -> {
-                    // Handle success display
-                }
-                is GameContract.Effect.GameCompleted -> {
-                    // Handle game completion
-                }
-                is GameContract.Effect.NavigateToNextDifficulty -> {
-                    // Handle navigation
-                }
-                is GameContract.Effect.RequestFocus -> {
-                    // Handle focus request
-                }
-                is GameContract.Effect.SaveGameState -> {
-                    // Handle save state
-                }
-                is GameContract.Effect.VibrateFeedback -> {
-                    // Handle vibration feedback
-                }
-            }
-        }.collect()
-    }
     
     // Start by loading the game
     LaunchedEffect(Unit) {
