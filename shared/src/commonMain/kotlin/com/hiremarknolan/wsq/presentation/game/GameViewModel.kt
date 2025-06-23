@@ -118,6 +118,18 @@ class GameViewModel(
                         elapsedTime = savedState.elapsedTime
                     )
                 }
+            } else {
+                // No saved state for this difficulty: clear previous session data
+                updateState {
+                    copy(
+                        guessCount = 0,
+                        previousGuesses = emptyList(),
+                        isGameWon = false,
+                        isGameOver = false,
+                        score = 0,
+                        elapsedTime = 0L
+                    )
+                }
             }
             
             // Start the timer for active games
@@ -178,12 +190,21 @@ class GameViewModel(
             // Use the clean SubmitWordUseCase
             when (val result = submitWordUseCase(currentState.tiles, currentState.targetWords)) {
                 is SubmitWordResult.Success -> {
-                    // Update state with new tiles and increment guess count
+                    // Update state with new tiles, increment guess count, and record the guess
                     val newGuessCount = currentState.guessCount + 1
+                    // Extract the guessed border words from current tiles
+                    val gridSize = currentState.tiles.size
+                    val top = (0 until gridSize).map { col -> currentState.tiles[0][col].letter }.joinToString("")
+                    val right = (0 until gridSize).map { row -> currentState.tiles[row][gridSize - 1].letter }.joinToString("")
+                    val bottom = (0 until gridSize).map { col -> currentState.tiles[gridSize - 1][col].letter }.joinToString("")
+                    val left = (0 until gridSize).map { row -> currentState.tiles[row][0].letter }.joinToString("")
+                    val guessString = "$top/$right/$bottom/$left"
+                    val newPreviousGuesses = currentState.previousGuesses + guessString
                     updateState { 
                         copy(
                             tiles = result.updatedTiles,
                             guessCount = newGuessCount,
+                            previousGuesses = newPreviousGuesses,
                             errorMessage = null,
                             invalidWords = emptyList(),
                             hasNetworkError = false
