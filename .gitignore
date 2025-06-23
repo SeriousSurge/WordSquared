@@ -9,3 +9,8 @@ captures
 .cxx
 local.properties
 xcuserdata
+node_modules/
+.firebase/
+public/*.wasm
+public/wasmApp.js
+**/build/
