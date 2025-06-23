@@ -27,10 +27,10 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 
 /**
- * New MVI-based Game Screen
+ * Game Screen
  */
 @Composable
-fun GameScreenMvi(
+fun GameScreen(
     modifier: Modifier = Modifier,
     viewModel: GameViewModel? = null
 ) {
@@ -154,7 +154,7 @@ private fun GameContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Game Header
-                GameHeaderMvi(
+                GameHeader(
                     elapsedTime = state.elapsedTime,
                     guessCount = state.guessCount,
                     difficulty = state.difficulty,
@@ -165,7 +165,7 @@ private fun GameContent(
                 )
 
                 // Game Board
-                GameBoardMvi(
+                GameBoard(
                     tiles = state.tiles,
                     selectedPosition = state.selectedPosition,
                     gridSize = state.currentGridSize,
@@ -176,7 +176,7 @@ private fun GameContent(
 
                 // Virtual Keyboard or Submit button when keyboard is hidden
                 if (platformSettings.shouldShowVirtualKeyboard) {
-                    VirtualKeyboardMvi(
+                    VirtualKeyboard(
                         onIntent = onIntent,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -201,7 +201,7 @@ private fun GameContent(
                 Column(
                     Modifier.weight(1f)
                 ) {
-                    CompactGameHeaderMvi(
+                    CompactGameHeader(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth(),
@@ -215,7 +215,7 @@ private fun GameContent(
 
                     // Left split keyboard
                     if (platformSettings.shouldShowVirtualKeyboard) {
-                        SplitKeyboardLeftMvi(
+                        SplitKeyboardLeft(
                             onIntent = onIntent,
                             modifier = Modifier
                                 .wrapContentWidth()
@@ -232,7 +232,7 @@ private fun GameContent(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    GameBoardMvi(
+                    GameBoard(
                         tiles = state.tiles,
                         selectedPosition = state.selectedPosition,
                         gridSize = state.currentGridSize,
@@ -260,7 +260,7 @@ private fun GameContent(
                     modifier = Modifier.weight(1f)
                 ) {
                     // List of previous guesses
-                    PreviousGuessesListMvi(
+                    PreviousGuessesList(
                         previousGuesses = state.previousGuesses,
                         onIntent = onIntent,
                         modifier = Modifier
@@ -270,7 +270,7 @@ private fun GameContent(
 
                     // Right split keyboard (only on platforms that support it)
                     if (platformSettings.shouldShowVirtualKeyboard) {
-                        SplitKeyboardRightMvi(
+                        SplitKeyboardRight(
                             onIntent = onIntent,
                             modifier = Modifier
                                 .wrapContentWidth()
@@ -285,37 +285,37 @@ private fun GameContent(
     // Handle modals
     when {
         state.showVictoryModal -> {
-            VictoryModalMvi(
+            VictoryModal(
                 state = state,
                 onIntent = onIntent
             )
         }
         state.showInvalidWordsModal -> {
-            InvalidWordsModalMvi(
+            InvalidWordsModal(
                 invalidWords = state.invalidWords,
                 hasNetworkError = state.hasNetworkError,
                 onIntent = onIntent
             )
         }
         state.showErrorDialog && state.errorMessage != null -> {
-            ErrorDialogMvi(
+            ErrorDialog(
                 errorMessage = state.errorMessage!!,
                 onIntent = onIntent
             )
         }
         state.showTutorial -> {
-            TutorialModalMvi(
+            TutorialModal(
                 onIntent = onIntent
             )
         }
         state.showGuessesModal -> {
-            PreviousGuessesModalMvi(
+            PreviousGuessesModal(
                 previousGuesses = state.previousGuesses,
                 onIntent = onIntent
             )
         }
         state.showHamburgerMenu -> {
-            HamburgerMenuModalMvi(
+            HamburgerMenuModal(
                 difficulty = state.difficulty,
                 onIntent = onIntent
             )

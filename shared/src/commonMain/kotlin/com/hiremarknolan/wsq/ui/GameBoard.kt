@@ -21,7 +21,7 @@ import com.hiremarknolan.wsq.models.TileState
 import com.hiremarknolan.wsq.presentation.game.GameContract
 
 @Composable
-fun GameBoardMvi(
+fun GameBoard(
     tiles: Array<Array<Tile>>,
     selectedPosition: Pair<Int, Int>?,
     gridSize: Int,
@@ -36,7 +36,7 @@ fun GameBoardMvi(
             .then(modifier)
     ) {
         // Main game board
-        GameBoardGridMvi(
+        GameBoardGrid(
             tiles = tiles,
             selectedPosition = selectedPosition,
             gridSize = gridSize,
@@ -48,7 +48,7 @@ fun GameBoardMvi(
         
         // Show completion button in center of board when solved
         if (isGameWon) {
-            GameCompletionButtonMvi(
+            GameCompletionButton(
                 onShowVictory = { onIntent(GameContract.Intent.ShowVictoryModal) },
                 modifier = Modifier.align(Alignment.Center)
             )
@@ -57,7 +57,7 @@ fun GameBoardMvi(
 }
 
 @Composable
-private fun GameBoardGridMvi(
+private fun GameBoardGrid(
     tiles: Array<Array<Tile>>,
     selectedPosition: Pair<Int, Int>?,
     gridSize: Int,
@@ -96,7 +96,7 @@ private fun GameBoardGridMvi(
                         Tile(row, col, ' ', TileState.EDITABLE) // Default tile
                     }
                     
-                    GameTileMvi(
+                    GameTile(
                         tile = tile,
                         isSelected = selectedPosition == (row to col),
                         isMiddleSquare = row in 1 until gridSize - 1 && 
@@ -113,7 +113,7 @@ private fun GameBoardGridMvi(
 }
 
 @Composable
-private fun GameTileMvi(
+private fun GameTile(
     tile: Tile,
     isSelected: Boolean,
     isMiddleSquare: Boolean,
@@ -158,7 +158,7 @@ private fun GameTileMvi(
 }
 
 @Composable
-private fun GameCompletionButtonMvi(
+private fun GameCompletionButton(
     onShowVictory: () -> Unit,
     modifier: Modifier = Modifier
 ) {

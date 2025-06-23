@@ -1,6 +1,5 @@
 package com.hiremarknolan.wsq.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -19,7 +18,7 @@ import com.hiremarknolan.wsq.models.Difficulty
 import com.hiremarknolan.wsq.presentation.game.GameContract
 
 @Composable
-fun GameHeaderMvi(
+fun GameHeader(
     elapsedTime: Long,
     guessCount: Int,
     difficulty: Difficulty,
@@ -157,7 +156,7 @@ fun GameHeaderMvi(
 }
 
 @Composable
-fun CompactGameHeaderMvi(
+fun CompactGameHeader(
     elapsedTime: Long,
     guessCount: Int,
     difficulty: Difficulty,

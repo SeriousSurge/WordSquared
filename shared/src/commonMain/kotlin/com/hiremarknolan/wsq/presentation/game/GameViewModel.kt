@@ -6,7 +6,6 @@ import com.hiremarknolan.wsq.models.*
 import com.hiremarknolan.wsq.mvi.MviViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Clock
 
 /**
  * Clean MVI ViewModel for the game screen - no more hybrid approach

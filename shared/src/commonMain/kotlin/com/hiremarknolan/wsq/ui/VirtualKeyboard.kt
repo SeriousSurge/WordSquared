@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.hiremarknolan.wsq.presentation.game.GameContract
 
 @Composable
-fun VirtualKeyboardMvi(
+fun VirtualKeyboard(
     onIntent: (GameContract.Intent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -95,7 +95,7 @@ fun VirtualKeyboardMvi(
 }
 
 @Composable
-fun SplitKeyboardLeftMvi(
+fun SplitKeyboardLeft(
     onIntent: (GameContract.Intent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -152,7 +152,7 @@ fun SplitKeyboardLeftMvi(
 }
 
 @Composable
-fun SplitKeyboardRightMvi(
+fun SplitKeyboardRight(
     onIntent: (GameContract.Intent) -> Unit,
     modifier: Modifier = Modifier
 ) {

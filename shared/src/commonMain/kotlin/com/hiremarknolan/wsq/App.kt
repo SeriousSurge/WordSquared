@@ -12,7 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.hiremarknolan.wsq.di.initKoin
-import com.hiremarknolan.wsq.ui.GameScreenMvi
+import com.hiremarknolan.wsq.ui.GameScreen
 import com.hiremarknolan.wsq.presentation.game.GameViewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
@@ -54,7 +54,7 @@ fun App(platformSettings: PlatformSettings) {
                         .union(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal))
                 )
         ) {
-            GameScreenMvi(viewModel = gameViewModel)
+            GameScreen(viewModel = gameViewModel)
         }
     }
 }

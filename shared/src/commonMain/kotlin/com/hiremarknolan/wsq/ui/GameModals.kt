@@ -19,10 +19,10 @@ import com.hiremarknolan.wsq.models.InvalidWord
 import com.hiremarknolan.wsq.presentation.game.GameContract
 
 /**
- * MVI-compatible Victory Dialog (dismissible)
+ * Victory Dialog (dismissible)
  */
 @Composable
-fun VictoryModalMvi(
+fun VictoryModal(
     state: GameContract.State,
     onIntent: (GameContract.Intent) -> Unit
 ) {
@@ -77,7 +77,7 @@ fun VictoryModalMvi(
                 )
                 
                 // Show stats
-                VictoryStatsMvi(
+                VictoryStats(
                     elapsedTime = state.elapsedTime,
                     guessCount = state.guessCount,
                     score = state.score
@@ -88,10 +88,10 @@ fun VictoryModalMvi(
 }
 
 /**
- * MVI-compatible Error Dialog (dismissible)
+ *  Error Dialog (dismissible)
  */
 @Composable
-fun ErrorDialogMvi(
+fun ErrorDialog(
     errorMessage: String,
     onIntent: (GameContract.Intent) -> Unit
 ) {
@@ -138,10 +138,10 @@ fun ErrorDialogMvi(
 }
 
 /**
- * MVI-compatible Invalid Words Dialog (dismissible)
+ * Invalid Words Dialog (dismissible)
  */
 @Composable
-fun InvalidWordsModalMvi(
+fun InvalidWordsModal(
     invalidWords: List<InvalidWord>,
     hasNetworkError: Boolean,
     onIntent: (GameContract.Intent) -> Unit
@@ -232,10 +232,10 @@ fun InvalidWordsModalMvi(
 }
 
 /**
- * MVI-compatible Tutorial Dialog (dismissible)
+ * Tutorial Dialog (dismissible)
  */
 @Composable
-fun TutorialModalMvi(
+fun TutorialModal(
     onIntent: (GameContract.Intent) -> Unit
 ) {
     AlertDialog(
@@ -273,19 +273,19 @@ fun TutorialModalMvi(
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                TutorialSectionMvi(
+                TutorialSection(
                     icon = Icons.Default.GpsFixed,
                     title = "Objective",
                     description = "Fill the border squares to form valid words reading across the top, down the right, across the bottom, and up the left."
                 )
                 
-                TutorialSectionMvi(
+                TutorialSection(
                     icon = Icons.Default.SportsEsports,
                     title = "How to Play",
                     description = "Tap a border square to select it, then use the virtual keyboard to enter letters. The center squares are already filled for you."
                 )
                 
-                TutorialSectionMvi(
+                TutorialSection(
                     icon = Icons.Default.Extension,
                     title = "Validation",
                     description = "Tap Submit to check your words. Invalid words will be highlighted and you can try again."
@@ -296,10 +296,10 @@ fun TutorialModalMvi(
 }
 
 /**
- * MVI-compatible Previous Guesses Dialog (dismissible)
+ * Previous Guesses Dialog (dismissible)
  */
 @Composable
-fun PreviousGuessesModalMvi(
+fun PreviousGuessesModal(
     previousGuesses: List<String>,
     onIntent: (GameContract.Intent) -> Unit
 ) {
@@ -384,10 +384,10 @@ fun PreviousGuessesModalMvi(
 }
 
 /**
- * MVI-compatible Hamburger Menu Dialog (dismissible)
+ * Hamburger Menu Dialog (dismissible)
  */
 @Composable
-fun HamburgerMenuModalMvi(
+fun HamburgerMenuModal(
     difficulty: com.hiremarknolan.wsq.models.Difficulty,
     onIntent: (GameContract.Intent) -> Unit
 ) {
@@ -457,7 +457,7 @@ fun HamburgerMenuModalMvi(
                 HorizontalDivider(color = Color(0xFFE0E0E0))
                 
                 // Menu Options
-                MenuOptionMvi(
+                MenuOption(
                     icon = Icons.Default.Lightbulb,
                     text = "How to Play",
                     onClick = {
@@ -466,7 +466,7 @@ fun HamburgerMenuModalMvi(
                     }
                 )
                 
-                MenuOptionMvi(
+                MenuOption(
                     icon = Icons.Default.Refresh,
                     text = "New Game",
                     onClick = {
@@ -480,7 +480,7 @@ fun HamburgerMenuModalMvi(
 }
 
 @Composable
-private fun MenuOptionMvi(
+private fun MenuOption(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
     onClick: () -> Unit
@@ -508,7 +508,7 @@ private fun MenuOptionMvi(
 }
 
 @Composable
-private fun VictoryStatsMvi(
+private fun VictoryStats(
     elapsedTime: Long,
     guessCount: Int,
     score: Int
@@ -517,15 +517,15 @@ private fun VictoryStatsMvi(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        StatItemMvi(
+        StatItem(
             value = "${elapsedTime / 60}:${(elapsedTime % 60).toString().padStart(2, '0')}",
             label = "Time"
         )
-        StatItemMvi(
+        StatItem(
             value = guessCount.toString(),
             label = "Guesses"
         )
-        StatItemMvi(
+        StatItem(
             value = score.toString(),
             label = "Score"
         )
@@ -533,7 +533,7 @@ private fun VictoryStatsMvi(
 }
 
 @Composable
-private fun StatItemMvi(
+private fun StatItem(
     value: String,
     label: String
 ) {
@@ -549,7 +549,7 @@ private fun StatItemMvi(
 }
 
 @Composable
-private fun TutorialSectionMvi(
+private fun TutorialSection(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     description: String

@@ -151,12 +151,12 @@ wsq/
 │       ├── network/                  # API client for puzzles
 │       │   └── WordSquareApiClient.kt
 │       └── ui/                       # Compose UI components (MVI-based)
-│           ├── GameScreenMvi.kt
-│           ├── GameBoardMvi.kt
-│           ├── GameHeaderMvi.kt
-│           ├── PreviousGuessesListMvi.kt
-│           ├── GameModalsMvi.kt
-│           └── VirtualKeyboardMvi.kt
+│           ├── GameScreen.kt
+│           ├── GameBoard.kt
+│           ├── GameHeader.kt
+│           ├── PreviousGuessesList.kt
+│           ├── GameModals.kt
+│           └── VirtualKeyboard.kt
 │   ├── src/androidMain/             # Android-specific implementations
 │   ├── src/iosMain/                 # iOS-specific implementations
 │   ├── src/desktopMain/             # Desktop-specific implementations

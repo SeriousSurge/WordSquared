@@ -2,7 +2,6 @@ package com.hiremarknolan.wsq.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
@@ -16,7 +15,7 @@ import androidx.compose.ui.unit.sp
 import com.hiremarknolan.wsq.presentation.game.GameContract
 
 @Composable
-fun PreviousGuessesListMvi(
+fun PreviousGuessesList(
     previousGuesses: List<String>,
     onIntent: (GameContract.Intent) -> Unit,
     modifier: Modifier = Modifier
