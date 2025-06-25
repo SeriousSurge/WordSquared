@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hiremarknolan.wsq.presentation.game.GameContract
+import com.hiremarknolan.wsq.ui.MiniWordSquare
 
 @Composable
 fun PreviousGuessesList(
@@ -40,27 +41,22 @@ fun PreviousGuessesList(
                 val guess = previousGuesses[index]
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
                             text = "#${index + 1}",
-                            fontSize = 12.sp,
+                            fontSize = 10.sp,
                             color = Color.Gray,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = guess,
-                            fontSize = 14.sp,
-                            color = Color.Black,
-                            fontWeight = FontWeight.Medium
-                        )
+                        MiniWordSquare(guess = guess)
                     }
                 }
             }
