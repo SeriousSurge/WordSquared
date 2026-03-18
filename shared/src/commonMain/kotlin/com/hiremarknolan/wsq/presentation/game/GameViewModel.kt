@@ -4,8 +4,8 @@ import com.hiremarknolan.wsq.domain.usecase.*
 import com.hiremarknolan.wsq.domain.repository.GameStateData
 import com.hiremarknolan.wsq.models.*
 import com.hiremarknolan.wsq.mvi.MviViewModel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Clean MVI ViewModel for the game screen - no more hybrid approach
@@ -28,6 +28,11 @@ class GameViewModel(
     private var saveJob: kotlinx.coroutines.Job? = null
     private var timerJob: kotlinx.coroutines.Job? = null
 
+    companion object {
+        private const val CLEAR_ANIMATION_DURATION_MS = 220L
+        private const val DROP_ANIMATION_DURATION_MS = 260L
+    }
+
     init {
         viewModelScope.launch {
             initializeGame()
@@ -35,6 +40,10 @@ class GameViewModel(
     }
 
     override suspend fun handleIntent(intent: GameContract.Intent) {
+        if (shouldIgnoreIntentWhileAnimating(intent)) {
+            return
+        }
+
         when (intent) {
             is GameContract.Intent.LoadGame -> loadGame()
             is GameContract.Intent.SubmitWord -> submitWord()
@@ -98,7 +107,8 @@ class GameViewModel(
                     targetWords = puzzleResult.targetWords,
                     selectedPosition = puzzleResult.firstEditablePosition,
                     currentPuzzleDate = puzzleResult.puzzleDate,
-                    isLoading = false
+                    isLoading = false,
+                    boardAnimation = null
                 )
             }
             
@@ -114,7 +124,8 @@ class GameViewModel(
                         isGameWon = savedState.isGameWon,
                         isGameOver = savedState.isGameOver,
                         score = savedState.score,
-                        elapsedTime = savedState.elapsedTime
+                        elapsedTime = savedState.elapsedTime,
+                        boardAnimation = null
                     )
                 }
             } else {
@@ -126,7 +137,8 @@ class GameViewModel(
                         isGameWon = false,
                         isGameOver = false,
                         score = 0,
-                        elapsedTime = 0L
+                        elapsedTime = 0L,
+                        boardAnimation = null
                     )
                 }
             }
@@ -189,9 +201,7 @@ class GameViewModel(
             // Use the clean SubmitWordUseCase
             when (val result = submitWordUseCase(currentState.tiles, currentState.targetWords)) {
                 is SubmitWordResult.Success -> {
-                    // Update state with new tiles, increment guess count, and record the guess
                     val newGuessCount = currentState.guessCount + 1
-                    // Extract the guessed border words from current tiles
                     val gridSize = currentState.tiles.size
                     val top = (0 until gridSize).map { col -> currentState.tiles[0][col].letter }.joinToString("")
                     val right = (0 until gridSize).map { row -> currentState.tiles[row][gridSize - 1].letter }.joinToString("")
@@ -199,22 +209,48 @@ class GameViewModel(
                     val left = (0 until gridSize).map { row -> currentState.tiles[row][0].letter }.joinToString("")
                     val guessString = "$top/$right/$bottom/$left"
                     val newPreviousGuesses = currentState.previousGuesses + guessString
-                    updateState { 
+                    val boardAnimation = buildBoardAnimation(currentState.tiles, result.updatedTiles)
+
+                    if (boardAnimation != null) {
+                        updateState {
+                            copy(
+                                errorMessage = null,
+                                invalidWords = emptyList(),
+                                hasNetworkError = false,
+                                boardAnimation = boardAnimation
+                            )
+                        }
+                        delay(CLEAR_ANIMATION_DURATION_MS)
+                    }
+
+                    val firstEditablePos = if (result.isGameComplete) {
+                        null
+                    } else {
+                        findFirstEditablePosition(result.updatedTiles)
+                    }
+
+                    updateState {
                         copy(
                             tiles = result.updatedTiles,
+                            selectedPosition = firstEditablePos,
                             guessCount = newGuessCount,
                             previousGuesses = newPreviousGuesses,
                             errorMessage = null,
                             invalidWords = emptyList(),
-                            hasNetworkError = false
+                            hasNetworkError = false,
+                            boardAnimation = boardAnimation?.toDropPhase()
                         )
                     }
-                    
-                    // Check if game is complete
+
+                    if (boardAnimation != null) {
+                        delay(DROP_ANIMATION_DURATION_MS)
+                        updateState { copy(boardAnimation = null) }
+                    }
+
                     if (result.isGameComplete) {
-                        stopTimer() // Stop timer when game is complete
+                        stopTimer()
                         val gameScore = calculateScoreUseCase(currentState.difficulty, newGuessCount)
-                        updateState { 
+                        updateState {
                             copy(
                                 isGameWon = true,
                                 isGameOver = true,
@@ -224,13 +260,8 @@ class GameViewModel(
                             )
                         }
                         sendEffect(GameContract.Effect.GameCompleted)
-                    } else {
-                        // Move cursor to first available editable position
-                        val firstEditablePos = findFirstEditablePosition(result.updatedTiles)
-                        updateState { copy(selectedPosition = firstEditablePos) }
                     }
-                    
-                    // Auto-save state
+
                     saveGameState()
                 }
                 
@@ -277,6 +308,75 @@ class GameViewModel(
         }
     }
     
+    private fun shouldIgnoreIntentWhileAnimating(intent: GameContract.Intent): Boolean {
+        if (currentState.boardAnimation == null) {
+            return false
+        }
+
+        return when (intent) {
+            is GameContract.Intent.SubmitWord,
+            is GameContract.Intent.SelectPosition,
+            is GameContract.Intent.ClearSelection,
+            is GameContract.Intent.EnterLetter,
+            is GameContract.Intent.DeleteLetter -> true
+            else -> false
+        }
+    }
+
+    private fun buildBoardAnimation(
+        currentTiles: Array<Array<Tile>>,
+        updatedTiles: Array<Array<Tile>>
+    ): GameContract.BoardAnimation? {
+        val clearingPositions = mutableSetOf<GridPosition>()
+        val lockingPositions = mutableSetOf<GridPosition>()
+        val affectedRows = mutableSetOf<Int>()
+
+        for (row in currentTiles.indices) {
+            for (col in currentTiles[row].indices) {
+                val currentTile = currentTiles[row][col]
+                val updatedTile = updatedTiles[row][col]
+                val position = GridPosition(row, col)
+
+                if (currentTile.letter != ' ' && updatedTile.letter == ' ') {
+                    clearingPositions += position
+                    affectedRows += row
+                }
+
+                if (currentTile.state != TileState.CORRECT && updatedTile.state == TileState.CORRECT) {
+                    lockingPositions += position
+                    affectedRows += row
+                }
+            }
+        }
+
+        if (clearingPositions.isEmpty() && lockingPositions.isEmpty()) {
+            return null
+        }
+
+        val dropStartRow = (affectedRows.minOrNull() ?: 0).coerceAtLeast(0)
+        val droppingPositions = mutableSetOf<GridPosition>()
+        for (row in dropStartRow until updatedTiles.size) {
+            for (col in updatedTiles[row].indices) {
+                val tile = updatedTiles[row][col]
+                if (tile.state != TileState.CENTER && tile.letter != ' ') {
+                    droppingPositions += GridPosition(row, col)
+                }
+            }
+        }
+
+        return GameContract.BoardAnimation(
+            phase = GameContract.BoardAnimationPhase.CLEARING,
+            clearingPositions = clearingPositions,
+            lockingPositions = lockingPositions,
+            droppingPositions = droppingPositions,
+            affectedRows = affectedRows
+        )
+    }
+
+    private fun GameContract.BoardAnimation.toDropPhase(): GameContract.BoardAnimation {
+        return copy(phase = GameContract.BoardAnimationPhase.DROPPING)
+    }
+
     private fun findFirstEditablePosition(tiles: Array<Array<Tile>>): Pair<Int, Int>? {
         for (row in tiles.indices) {
             for (col in tiles[row].indices) {
@@ -302,7 +402,8 @@ class GameViewModel(
                 previousGuesses = emptyList(),
                 completionTime = 0L,
                 showVictoryModal = false,
-                showInvalidWordsModal = false
+                showInvalidWordsModal = false,
+                boardAnimation = null
             )
         }
         loadGame()
@@ -315,7 +416,8 @@ class GameViewModel(
             copy(
                 difficulty = newDifficulty,
                 currentGridSize = newDifficulty.gridSize,
-                isLoading = true
+                isLoading = true,
+                boardAnimation = null
             )
         }
         
