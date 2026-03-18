@@ -171,7 +171,8 @@ private fun GameContent(
                     gridSize = state.currentGridSize,
                     isGameWon = state.isGameWon,
                     onIntent = onIntent,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    boardAnimation = state.boardAnimation
                 )
 
                 // Virtual Keyboard or Submit button when keyboard is hidden
@@ -240,7 +241,8 @@ private fun GameContent(
                         onIntent = onIntent,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f)
+                            .weight(1f),
+                        boardAnimation = state.boardAnimation
                     )
                     // Submit button when keyboard is hidden
                     if (!platformSettings.shouldShowVirtualKeyboard) {

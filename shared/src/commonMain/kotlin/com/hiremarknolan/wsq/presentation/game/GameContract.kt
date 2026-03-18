@@ -4,6 +4,7 @@ import com.hiremarknolan.wsq.mvi.MviEffect
 import com.hiremarknolan.wsq.mvi.MviIntent
 import com.hiremarknolan.wsq.mvi.MviState
 import com.hiremarknolan.wsq.models.Difficulty
+import com.hiremarknolan.wsq.models.GridPosition
 import com.hiremarknolan.wsq.models.InvalidWord
 import com.hiremarknolan.wsq.models.Tile
 
@@ -11,6 +12,19 @@ import com.hiremarknolan.wsq.models.Tile
  * Game screen MVI contract
  */
 class GameContract {
+
+    enum class BoardAnimationPhase {
+        CLEARING,
+        DROPPING
+    }
+
+    data class BoardAnimation(
+        val phase: BoardAnimationPhase,
+        val clearingPositions: Set<GridPosition> = emptySet(),
+        val lockingPositions: Set<GridPosition> = emptySet(),
+        val droppingPositions: Set<GridPosition> = emptySet(),
+        val affectedRows: Set<Int> = emptySet()
+    )
     
     /**
      * Game screen state
@@ -38,7 +52,8 @@ class GameContract {
         val showGuessesModal: Boolean = false,
         val showHamburgerMenu: Boolean = false,
         val targetWords: Map<String, String> = emptyMap(),
-        val showErrorDialog: Boolean = false
+        val showErrorDialog: Boolean = false,
+        val boardAnimation: BoardAnimation? = null
     ) : MviState {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -69,6 +84,7 @@ class GameContract {
             if (showHamburgerMenu != other.showHamburgerMenu) return false
             if (targetWords != other.targetWords) return false
             if (showErrorDialog != other.showErrorDialog) return false
+            if (boardAnimation != other.boardAnimation) return false
 
             return true
         }
@@ -97,6 +113,7 @@ class GameContract {
             result = 31 * result + showHamburgerMenu.hashCode()
             result = 31 * result + targetWords.hashCode()
             result = 31 * result + showErrorDialog.hashCode()
+            result = 31 * result + (boardAnimation?.hashCode() ?: 0)
             return result
         }
     }
@@ -147,4 +164,4 @@ class GameContract {
         object SaveGameState : Effect()
         object VibrateFeedback : Effect()
     }
-} 
+}
